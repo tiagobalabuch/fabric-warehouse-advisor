@@ -217,11 +217,10 @@ def get_table_row_counts(
     if min_rows > 0:
         row_counts = row_counts.filter(F.col("row_count") >= min_rows)
     return row_counts
-    if min_rows > 0:
-        row_counts = row_counts.filter(F.col("row_count") >= min_rows)
-    return row_counts
 
 
+# ------------------------------------------------------------------
+# Query Insights  (T-SQL passthrough)
 # ------------------------------------------------------------------
 # Query Insights  (T-SQL passthrough)
 # ------------------------------------------------------------------
