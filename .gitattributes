@@ -1,0 +1,20 @@
+# Normalize line endings to LF on commit, check out as OS-native
+* text=auto
+
+# Force LF for source files (consistent across Windows/Mac/Linux)
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+
+# Binary files — no conversion
+*.whl binary
+*.tar.gz binary
+*.png binary
+*.jpg binary
+*.ico binary

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fabric-data-clustering-advisor"
+version = "0.2.0"
+description = "Assesses and recommends Data Clustering for Microsoft Fabric Warehouse tables."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Fabric Warehouse Data Clustering Advisor Contributors"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+]
+
+# pyspark is provided by the Fabric Spark runtime; don't force a version
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "pytest",
+    "pyspark>=3.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
