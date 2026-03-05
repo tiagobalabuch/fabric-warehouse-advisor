@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"   # Triggers on tags like v0.2.0, v1.0.0, etc.
+
+permissions:
+  contents: write   # Required to create releases and upload assets
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## Fabric Warehouse Data Clustering Advisor v${{ steps.version.outputs.VERSION }}
+
+            ### Installation
+
+            Download the `.whl` file below and install it in your Fabric Spark notebook:
+
+            ```python
+            %pip install /lakehouse/default/Files/fabric_data_clustering_advisor-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+            ```
+
+            Or install directly from the URL (if your environment has internet access):
+
+            ```python
+            %pip install https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/fabric_data_clustering_advisor-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+            ```
+
+            ### Quick Start
+
+            ```python
+            from fabric_data_clustering_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+
+            config = DataClusteringAdvisorConfig(warehouse_name="MyWarehouse")
+            advisor = DataClusteringAdvisor(spark, config)
+            result = advisor.run()
+            displayHTML(result.html_report)
+            ```
+
+            See the [documentation](https://github.com/${{ github.repository }}/tree/main/docs) for full usage details.
+          files: |
+            dist/fabric_data_clustering_advisor-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+            dist/fabric_data_clustering_advisor-${{ steps.version.outputs.VERSION }}.tar.gz
+          draft: false
+          prerelease: false
