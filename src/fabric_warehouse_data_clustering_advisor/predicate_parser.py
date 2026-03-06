@@ -194,8 +194,12 @@ def extract_predicates_regex(
 
 
 # ==================================================================
-# STRATEGY 2 - ShowPlanXML parser 
-# Note: This is not fully implemented & supported;
+# STRATEGY 2 - ShowPlanXML parser
+# Note: This strategy is experimental and only partially implemented.
+# It extracts a limited subset of predicate information from ShowPlanXML
+# and performs minimal validation/error handling. Callers should not rely
+# on it for complete predicate coverage and should prefer the regex-based
+# parser above unless they explicitly control the execution plans used.
 # ==================================================================
 
 _SHOWPLAN_NS = "http://schemas.microsoft.com/sqlserver/2004/07/showplan"
