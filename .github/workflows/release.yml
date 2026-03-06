@@ -86,10 +86,21 @@ jobs:
             PREV=$TAG
           done
 
-      - name: Commit CHANGELOG.md
+      - name: Commit CHANGELOG.md and create PR
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          BRANCH="changelog/${{ github.ref_name }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add CHANGELOG.md
-          git diff --cached --quiet || git commit -m "Update CHANGELOG.md for ${{ github.ref_name }}"
-          git push origin HEAD:${{ github.event.repository.default_branch }}
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Update CHANGELOG.md for ${{ github.ref_name }}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Update CHANGELOG.md for ${{ github.ref_name }}" \
+            --body "Automated changelog update for release ${{ github.ref_name }}." \
+            --label "chore" \
+            --base master \
+            --head "$BRANCH"
