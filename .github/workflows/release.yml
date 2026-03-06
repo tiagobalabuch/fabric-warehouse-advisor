@@ -94,6 +94,11 @@ jobs:
           BRANCH="changelog/${{ github.ref_name }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Switch to master so the branch doesn't include workflow file diffs
+          # (GITHUB_TOKEN cannot push branches containing workflow changes)
+          git stash -- CHANGELOG.md
+          git checkout master
+          git stash pop
           # Delete remote branch if it exists from a previous run
           git push origin --delete "$BRANCH" 2>/dev/null || true
           git checkout -b "$BRANCH"
