@@ -91,20 +91,6 @@ class DataClusteringAdvisorConfig:
         column.  Defaults to ``False``; set to ``True`` when you want
         ready-to-run DDL in the report.
 
-    use_execution_plans : bool
-        If ``True``, enable the hybrid predicate extraction strategy.
-        The advisor will fetch estimated execution plans (ShowPlanXML)
-        for the top *max_plans_to_fetch* most frequently run queries
-        and parse them with the ShowPlanXML parser for higher accuracy.
-        Remaining queries fall back to the regex-based heuristic.
-        Defaults to ``False`` (regex-only mode).
-
-    max_plans_to_fetch : int
-        Maximum number of queries to fetch execution plans for when
-        ``use_execution_plans`` is enabled.  Queries are ranked by
-        ``number_of_runs`` (descending) and only the top N get plans.
-        Defaults to ``20``.
-
     table_names : list[str]
         Optional list of tables to analyse.  When non-empty, **only**
         these tables are included (all others are skipped).  Each entry
@@ -149,10 +135,6 @@ class DataClusteringAdvisorConfig:
     max_clustering_columns: int = 3
     min_recommendation_score: int = 40
     generate_ctas: bool = False
-
-    # -- Predicate extraction strategy --
-    use_execution_plans: bool = False
-    max_plans_to_fetch: int = 20
 
     # -- Table filter --
     table_names: list[str] = field(default_factory=list)

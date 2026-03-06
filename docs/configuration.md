@@ -106,35 +106,6 @@ config = DataClusteringAdvisorConfig(
 The filter applies to **all phases** — metadata collection, row counting,
 query pattern matching, cardinality estimation, and scoring.
 
-## Predicate Extraction Strategy
-
-By default the advisor extracts predicate columns from query text using a
-lightweight **regex** heuristic (Strategy 1). You can optionally enable a
-**hybrid** mode that fetches estimated execution plans (ShowPlanXML) for
-the most frequently run queries and parses predicate columns from the
-compiled plan — falling back to regex for the remaining queries or when
-plan retrieval fails.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `use_execution_plans` | `bool` | `False` | Enable the hybrid strategy. When `True`, the advisor fetches ShowPlanXML plans for the top-N queries (by run count) and parses predicates from the XML. Queries beyond the budget, or where plan retrieval fails, fall back to regex. |
-| `max_plans_to_fetch` | `int` | `20` | Maximum number of execution plans to fetch per run. Only applies when `use_execution_plans` is `True`. Higher values give more accurate results but increase execution time. |
-
-```python
-# Enable hybrid predicate extraction with a budget of 30 plans
-config = DataClusteringAdvisorConfig(
-    warehouse_name="MyWarehouse",
-    use_execution_plans=True,
-    max_plans_to_fetch=30,
-)
-```
-
-> **Note:** Fetching execution plans uses `SET SHOWPLAN_XML ON` via T-SQL
-> passthrough. This returns the *estimated* plan without actually executing the
-> query, so it adds minimal overhead per query. However, some queries may not
-> produce a plan (e.g. syntax errors, unsupported constructs), in which case the
-> regex fallback is used automatically.
-
 ## Output Parameters
 
 | Parameter | Type | Default | Description |

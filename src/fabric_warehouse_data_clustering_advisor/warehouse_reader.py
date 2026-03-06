@@ -280,52 +280,6 @@ def get_long_running_queries(
 
 
 # ------------------------------------------------------------------
-# Execution plan retrieval  (T-SQL passthrough)
-# ------------------------------------------------------------------
-
-def fetch_estimated_plan(
-    spark: SparkSession,
-    warehouse: str,
-    sql_text: str,
-    workspace_id: str = "",
-    warehouse_id: str = "",
-) -> Optional[str]:
-    """
-    Retrieve the estimated execution plan (ShowPlanXML) for a query.
-
-    Wraps the query with ``SET SHOWPLAN_XML ON`` / ``OFF`` so the SQL
-    engine returns the compiled plan **without executing** the query.
-
-    Returns the XML string on success, or ``None`` if the plan could
-    not be retrieved (e.g. the query has syntax errors, uses
-    unsupported features, or the connector cannot return XML output).
-    """
-    try:
-        plan_query = (
-            f"SET SHOWPLAN_XML ON; {sql_text}; SET SHOWPLAN_XML OFF;"
-        )
-        df = read_warehouse_query(
-            spark, warehouse, plan_query, workspace_id, warehouse_id
-        )
-        rows = df.collect()
-        if rows:
-            first_row = rows[0]
-            # The plan XML is typically in the first column
-            plan_xml = str(first_row[0]) if first_row[0] else None
-            if plan_xml and plan_xml.strip().startswith("<?xml"):
-                return plan_xml
-            # Some connectors return it in a named column
-            for col_name in df.columns:
-                val = str(getattr(first_row, col_name, ""))
-                if val.strip().startswith("<?xml"):
-                    return val
-        return None
-    except Exception as exc:
-        print(f"  [WARN] Could not fetch execution plan: {exc}")
-        return None
-
-
-# ------------------------------------------------------------------
 # Cardinality estimation  (T-SQL passthrough — no full-table reads)
 # ------------------------------------------------------------------
 

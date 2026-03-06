@@ -37,11 +37,9 @@ from .warehouse_reader import (
     get_frequently_run_queries,
     estimate_column_cardinality,
     estimate_batch_column_cardinality,
-    fetch_estimated_plan,
 )
 from .predicate_parser import (
     extract_predicates_regex,
-    parse_showplan_predicates,
     aggregate_predicate_hits,
     QueryPredicateSummary,
 )
@@ -397,15 +395,7 @@ class DataClusteringAdvisor:
             self._log_footer()
 
         # ---- Phase 5: Predicate columns ----
-        strategy_label = (
-            "hybrid (execution plans + regex fallback)"
-            if cfg.use_execution_plans
-            else "regex only"
-        )
-        print(
-            f"Phase 5: Extracting predicate columns from query text "
-            f"[strategy: {strategy_label}] ..."
-        )
+        print("Phase 5: Extracting predicate columns from query text ...")
         known_columns: List[Tuple[str, str, str]] = [
             (row.schema_name, row.table_name, row.column_name)
             for row in full_metadata.select(
@@ -413,72 +403,23 @@ class DataClusteringAdvisor:
             ).distinct().collect()
         ]
 
-        # Sort queries by frequency so the plan budget targets the most
-        # impactful queries first.
-        sorted_where_rows = sorted(
-            where_queries_rows,
-            key=lambda r: int(getattr(r, "number_of_runs", 1)),
-            reverse=True,
-        )
-
         summaries: List[QueryPredicateSummary] = []
-        plans_fetched = 0
-
-        for qrow in sorted_where_rows:
+        for qrow in where_queries_rows:
             cmd = qrow.last_run_command or ""
             qhash = str(getattr(qrow, "query_hash", ""))
-            num_runs = int(getattr(qrow, "number_of_runs", 1))
-
-            summary: Optional[QueryPredicateSummary] = None
-
-            # --- Hybrid path: try execution plan first ---
-            if cfg.use_execution_plans and plans_fetched < cfg.max_plans_to_fetch:
-                plan_xml = fetch_estimated_plan(
-                    self.spark,
-                    cfg.warehouse,
-                    cmd,
-                    workspace_id=cfg.workspace_id,
-                    warehouse_id=cfg.warehouse_id,
-                )
-                if plan_xml:
-                    summary = parse_showplan_predicates(
-                        plan_xml=plan_xml,
-                        known_columns=known_columns,
-                        query_hash=qhash,
-                        number_of_runs=num_runs,
-                    )
-                    plans_fetched += 1
-                    if cfg.verbose and summary and summary.hits:
-                        for h in summary.hits:
-                            self._log(
-                                f"    ├─ {h.table_name}.{h.column_name}  "
-                                f"op={h.compare_op}  origin={h.predicate_origin}"
-                                f"  [plan]"
-                            )
-
-            # --- Fallback / default: regex ---
-            if summary is None:
-                summary = extract_predicates_regex(
-                    sql_text=cmd,
-                    known_columns=known_columns,
-                    query_hash=qhash,
-                    number_of_runs=num_runs,
-                )
-                if cfg.verbose and summary.hits:
-                    for h in summary.hits:
-                        self._log(
-                            f"    ├─ {h.table_name}.{h.column_name}  "
-                            f"op={h.compare_op}  origin={h.predicate_origin}"
-                            f"  [regex]"
-                        )
-
-            summaries.append(summary)
-
-        if cfg.use_execution_plans:
-            print(
-                f"  Execution plans fetched: {plans_fetched} / "
-                f"{min(cfg.max_plans_to_fetch, len(sorted_where_rows))}"
+            summary = extract_predicates_regex(
+                sql_text=cmd,
+                known_columns=known_columns,
+                query_hash=qhash,
+                number_of_runs=int(getattr(qrow, "number_of_runs", 1)),
             )
+            summaries.append(summary)
+            if cfg.verbose and summary.hits:
+                for h in summary.hits:
+                    self._log(
+                        f"    ├─ {h.table_name}.{h.column_name}  "
+                        f"op={h.compare_op}  origin={h.predicate_origin}"
+                    )
 
         predicate_agg = aggregate_predicate_hits(summaries)
         print(f"  Unique (table, column) predicate candidates: {len(predicate_agg)}")

@@ -194,7 +194,8 @@ def extract_predicates_regex(
 
 
 # ==================================================================
-# STRATEGY 2 - ShowPlanXML parser
+# STRATEGY 2 - ShowPlanXML parser 
+# Note: This is not fully implemented & supported;
 # ==================================================================
 
 _SHOWPLAN_NS = "http://schemas.microsoft.com/sqlserver/2004/07/showplan"
