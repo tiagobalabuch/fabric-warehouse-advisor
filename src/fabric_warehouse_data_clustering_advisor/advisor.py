@@ -22,6 +22,7 @@ Usage
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
@@ -229,7 +230,11 @@ class DataClusteringAdvisor:
         print(f"Timestamp : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print()
 
+        _run_start = time.perf_counter()
+        _phase_timings: Dict[str, float] = {}
+
         # ---- Phase 1: Metadata ----
+        _t0 = time.perf_counter()
         print("Phase 1: Collecting table and column metadata ...")
         full_metadata = get_full_column_metadata(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id
@@ -257,8 +262,11 @@ class DataClusteringAdvisor:
             _display(full_metadata)
             self._log_footer()
         full_metadata.cache()
+        _phase_timings["Phase 1: Metadata"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 1 completed in {_phase_timings['Phase 1: Metadata']:.2f}s")
 
         # ---- Phase 2: Current clustering ----
+        _t0 = time.perf_counter()
         print("Phase 2: Reading current data clustering configuration ...")
         current_clustering = get_current_clustering_config(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id
@@ -312,8 +320,11 @@ class DataClusteringAdvisor:
                     )
 
         current_clustering.cache()
+        _phase_timings["Phase 2: Current clustering"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 2 completed in {_phase_timings['Phase 2: Current clustering']:.2f}s")
 
         # ---- Phase 3: Row counts ----
+        _t0 = time.perf_counter()
         print(f"Phase 3: Counting rows per table (min threshold: {cfg.min_row_count:,}) ...")
         row_counts = get_table_row_counts(
             spark, cfg.warehouse_name, full_metadata, min_rows=cfg.min_row_count,
@@ -325,8 +336,11 @@ class DataClusteringAdvisor:
             _display(row_counts.orderBy(F.desc("row_count")))
             self._log_footer()
         row_counts.cache()
+        _phase_timings["Phase 3: Row counts"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 3 completed in {_phase_timings['Phase 3: Row counts']:.2f}s")
 
         # ---- Phase 4: Query patterns ----
+        _t0 = time.perf_counter()
         print("Phase 4: Analysing query patterns from Query Insights ...")
         print("  (Including full-scan queries \u2014 data clustering is most effective")
         print("   on large tables even when scanning the full dataset.)")
@@ -394,7 +408,11 @@ class DataClusteringAdvisor:
                 print(f"    {sch}.{tbl:<38} {cnt:>12,}")
             self._log_footer()
 
+        _phase_timings["Phase 4: Query patterns"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 4 completed in {_phase_timings['Phase 4: Query patterns']:.2f}s")
+
         # ---- Phase 5: Predicate columns ----
+        _t0 = time.perf_counter()
         print("Phase 5: Extracting predicate columns from query text ...")
         known_columns: List[Tuple[str, str, str]] = [
             (row.schema_name, row.table_name, row.column_name)
@@ -405,6 +423,7 @@ class DataClusteringAdvisor:
 
         summaries: List[QueryPredicateSummary] = []
         for qrow in where_queries_rows:
+            _qt0 = time.perf_counter()
             cmd = qrow.last_run_command or ""
             qhash = str(getattr(qrow, "query_hash", ""))
             summary = extract_predicates_regex(
@@ -414,12 +433,15 @@ class DataClusteringAdvisor:
                 number_of_runs=int(getattr(qrow, "number_of_runs", 1)),
             )
             summaries.append(summary)
-            if cfg.verbose and summary.hits:
-                for h in summary.hits:
-                    self._log(
-                        f"    ├─ {h.table_name}.{h.column_name}  "
-                        f"op={h.compare_op}  origin={h.predicate_origin}"
-                    )
+            _qt_elapsed = time.perf_counter() - _qt0
+            if cfg.verbose:
+                if summary.hits:
+                    for h in summary.hits:
+                        self._log(
+                            f"    \u251c\u2500 {h.table_name}.{h.column_name}  "
+                            f"op={h.compare_op}  origin={h.predicate_origin}"
+                        )
+                self._log(f"    \u2514 query {qhash[:12]}... parsed in {_qt_elapsed:.3f}s")
 
         predicate_agg = aggregate_predicate_hits(summaries)
         print(f"  Unique (table, column) predicate candidates: {len(predicate_agg)}")
@@ -434,7 +456,11 @@ class DataClusteringAdvisor:
                 print(f"    {sch}.{tbl}.{col:<46} {hits:>8}")
             self._log_footer()
 
+        _phase_timings["Phase 5: Predicate columns"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 5 completed in {_phase_timings['Phase 5: Predicate columns']:.2f}s")
+
         # ---- Phase 6: Cardinality ----
+        _t0 = time.perf_counter()
         print("Phase 6: Estimating column cardinality for candidates ...")
         cardinality_cache: Dict[Tuple[str, str, str], Tuple[int, int, float]] = {}
 
@@ -447,6 +473,7 @@ class DataClusteringAdvisor:
         candidate_cols = set(predicate_agg.keys()) | clustered_cols_set
 
         for schema, table, col in candidate_cols:
+            _ct0 = time.perf_counter()
             print(f"  Estimating cardinality: {schema}.{table}.{col} ...")
             total, distinct, ratio = estimate_column_cardinality(
                 spark,
@@ -459,6 +486,8 @@ class DataClusteringAdvisor:
                 warehouse_id=cfg.warehouse_id,
             )
             cardinality_cache[(schema, table, col)] = (total, distinct, ratio)
+            _ct_elapsed = time.perf_counter() - _ct0
+            print(f"    \u23f1 {schema}.{table}.{col} in {_ct_elapsed:.2f}s")
             if cfg.verbose and total > 0:
                 pct = f"{ratio * 100:.2f}%" if ratio >= 0 else "N/A"
                 self._log(
@@ -490,6 +519,7 @@ class DataClusteringAdvisor:
                 )
 
             for (schema, table), cols in fs_cols_by_table.items():
+                _bt0 = time.perf_counter()
                 print(
                     f"  Batch cardinality for full-scan table "
                     f"{schema}.{table} ({len(cols)} columns) ..."
@@ -514,10 +544,14 @@ class DataClusteringAdvisor:
                             f"    ├─ {col_name:<28} total={total:>12,}  "
                             f"distinct~={distinct:>12,}  ratio={ratio:.6f}  ({pct})"
                         )
-
+                _bt_elapsed = time.perf_counter() - _bt0
+                print(f"    \u23f1 {schema}.{table} batch in {_bt_elapsed:.2f}s")
         print(f"  Cardinality estimated for {len(cardinality_cache)} columns.")
+        _phase_timings["Phase 6: Cardinality"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 6 completed in {_phase_timings['Phase 6: Cardinality']:.2f}s")
 
         # ---- Phase 7: Scoring & recommendations ----
+        _t0 = time.perf_counter()
         print("Phase 7: Scoring candidates and generating recommendations ...")
 
         all_scores = score_all_candidates(
@@ -578,6 +612,22 @@ class DataClusteringAdvisor:
             min_score=cfg.min_recommendation_score,
             captured_at=captured_at,
         )
+
+        _phase_timings["Phase 7: Scoring & reports"] = time.perf_counter() - _t0
+        print(f"  ⏱ Phase 7 completed in {_phase_timings['Phase 7: Scoring & reports']:.2f}s")
+
+        _total_elapsed = time.perf_counter() - _run_start
+
+        print("\n" + "═" * 60)
+        print("  ⏱ Timing Summary")
+        print("═" * 60)
+        for phase_name, elapsed in _phase_timings.items():
+            pct = (elapsed / _total_elapsed * 100) if _total_elapsed > 0 else 0
+            print(f"  {phase_name:<35} {elapsed:>8.2f}s  ({pct:>5.1f}%)")
+        _sep = "─"
+        print(f"  {_sep * 35} {_sep * 8}  {_sep * 7}")
+        print(f"  {'Total':<35} {_total_elapsed:>8.2f}s")
+        print("═" * 60)
 
         print("\n✓ Data Clustering Advisor completed successfully.")
         print("  Use  displayHTML(result.html_report)  for a rich HTML view.")

@@ -16,6 +16,7 @@ User tables are read with three-part names::
 
 from __future__ import annotations
 
+import time
 from typing import Dict, List, Optional, Tuple
 
 from pyspark.sql import DataFrame, SparkSession
@@ -194,6 +195,7 @@ def get_table_row_counts(
     results = []
     for schema_name, table_name in distinct_tables:
         try:
+            _t0 = time.perf_counter()
             q = (
                 f"SELECT COUNT_BIG(*) AS cnt "
                 f"FROM [{schema_name}].[{table_name}]"
@@ -202,6 +204,8 @@ def get_table_row_counts(
                 spark, warehouse, q, workspace_id, warehouse_id
             ).collect()[0]
             count = cnt_row["cnt"]
+            _elapsed = time.perf_counter() - _t0
+            print(f"    {schema_name}.{table_name}: {count:,} rows ({_elapsed:.2f}s)")
             results.append((schema_name, table_name, count))
         except Exception as exc:
             print(f"  [WARN] Could not count {schema_name}.{table_name}: {exc}")
