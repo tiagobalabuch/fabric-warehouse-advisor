@@ -234,7 +234,7 @@ class DataClusteringAdvisor:
         _phase_timings: Dict[str, float] = {}
 
         # ---- Phase 1: Metadata ----
-        _t0 = time.perf_counter()
+        _phase_start = time.perf_counter()
         print("Phase 1: Collecting table and column metadata ...")
         full_metadata = get_full_column_metadata(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id
@@ -262,7 +262,7 @@ class DataClusteringAdvisor:
             _display(full_metadata)
             self._log_footer()
         full_metadata.cache()
-        _phase_timings["Phase 1: Metadata"] = time.perf_counter() - _t0
+        _phase_timings["Phase 1: Metadata"] = time.perf_counter() - _phase_start
         print(f"  ⏱ Phase 1 completed in {_phase_timings['Phase 1: Metadata']:.2f}s")
 
         # ---- Phase 2: Current clustering ----
@@ -423,7 +423,7 @@ class DataClusteringAdvisor:
 
         summaries: List[QueryPredicateSummary] = []
         for qrow in where_queries_rows:
-            _qt0 = time.perf_counter()
+            _query_start = time.perf_counter()
             cmd = qrow.last_run_command or ""
             qhash = str(getattr(qrow, "query_hash", ""))
             summary = extract_predicates_regex(
@@ -433,7 +433,7 @@ class DataClusteringAdvisor:
                 number_of_runs=int(getattr(qrow, "number_of_runs", 1)),
             )
             summaries.append(summary)
-            _qt_elapsed = time.perf_counter() - _qt0
+            _qt_elapsed = time.perf_counter() - _query_start
             if cfg.verbose:
                 if summary.hits:
                     for h in summary.hits:
@@ -473,7 +473,7 @@ class DataClusteringAdvisor:
         candidate_cols = set(predicate_agg.keys()) | clustered_cols_set
 
         for schema, table, col in candidate_cols:
-            _ct0 = time.perf_counter()
+            _cardinality_start = time.perf_counter()
             print(f"  Estimating cardinality: {schema}.{table}.{col} ...")
             total, distinct, ratio = estimate_column_cardinality(
                 spark,
@@ -486,7 +486,7 @@ class DataClusteringAdvisor:
                 warehouse_id=cfg.warehouse_id,
             )
             cardinality_cache[(schema, table, col)] = (total, distinct, ratio)
-            _ct_elapsed = time.perf_counter() - _ct0
+            _ct_elapsed = time.perf_counter() - _cardinality_start
             print(f"    \u23f1 {schema}.{table}.{col} in {_ct_elapsed:.2f}s")
             if cfg.verbose and total > 0:
                 pct = f"{ratio * 100:.2f}%" if ratio >= 0 else "N/A"
@@ -519,7 +519,7 @@ class DataClusteringAdvisor:
                 )
 
             for (schema, table), cols in fs_cols_by_table.items():
-                _bt0 = time.perf_counter()
+                _batch_start = time.perf_counter()
                 print(
                     f"  Batch cardinality for full-scan table "
                     f"{schema}.{table} ({len(cols)} columns) ..."
@@ -544,7 +544,7 @@ class DataClusteringAdvisor:
                             f"    ├─ {col_name:<28} total={total:>12,}  "
                             f"distinct~={distinct:>12,}  ratio={ratio:.6f}  ({pct})"
                         )
-                _bt_elapsed = time.perf_counter() - _bt0
+                _bt_elapsed = time.perf_counter() - _batch_start
                 print(f"    \u23f1 {schema}.{table} batch in {_bt_elapsed:.2f}s")
         print(f"  Cardinality estimated for {len(cardinality_cache)} columns.")
         _phase_timings["Phase 6: Cardinality"] = time.perf_counter() - _t0
@@ -621,12 +621,22 @@ class DataClusteringAdvisor:
         print("\n" + "═" * 60)
         print("  ⏱ Timing Summary")
         print("═" * 60)
+        phase_col_width = 35
+        elapsed_col_width = 8
+        pct_col_width = 7
         for phase_name, elapsed in _phase_timings.items():
             pct = (elapsed / _total_elapsed * 100) if _total_elapsed > 0 else 0
-            print(f"  {phase_name:<35} {elapsed:>8.2f}s  ({pct:>5.1f}%)")
-        _sep = "─"
-        print(f"  {_sep * 35} {_sep * 8}  {_sep * 7}")
-        print(f"  {'Total':<35} {_total_elapsed:>8.2f}s")
+            print(
+                f"  {phase_name:<{phase_col_width}} "
+                f"{elapsed:>{elapsed_col_width}.2f}s  ({pct:>5.1f}%)"
+            )
+        _separator = "─"
+        print(
+            f"  {_separator * phase_col_width} "
+            f"{_separator * elapsed_col_width}  "
+            f"{_separator * pct_col_width}"
+        )
+        print(f"  {'Total':<{phase_col_width}} {_total_elapsed:>{elapsed_col_width}.2f}s")
         print("═" * 60)
 
         print("\n✓ Data Clustering Advisor completed successfully.")
