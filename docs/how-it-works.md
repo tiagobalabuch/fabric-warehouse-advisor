@@ -95,7 +95,7 @@ identify which columns appear in predicates.
 The parser:
 
 1. Extracts `WHERE` clauses (everything between `WHERE` and
-   `ORDER BY`/`GROUP BY`/`HAVING`/`UNION`/`;`/end of the query text)
+   `ORDER BY`/`GROUP BY`/`HAVING`/`UNION`/`;`/`end of the query text`)
 2. Finds identifiers in the clause text
 3. Matches them against known columns from Phase 1
 4. Detects comparison operators (`=`, `>`, `<`, `BETWEEN`, `IN`, `LIKE`, etc.)
@@ -172,7 +172,7 @@ Phase 6 (cardinality) ───────────┘        ▼
 | 1. Metadata | T-SQL passthrough | Metadata only (~KB) | Instant |
 | 2. Clustering | T-SQL passthrough | Metadata only (~KB) | Instant |
 | 3. Row Counts | T-SQL `COUNT_BIG(*)` | Count per table (~KB) | Fast |
-| 4. Query Patterns | T-SQL passthrough | Query text only (~KB–MB) | Fast |
+| 4. Query Patterns | T-SQL passthrough | Query text only (~KB-MB) | Fast |
 | 5. Predicates | Local regex | None (in-memory) | Instant |
 | 6. Cardinality | T-SQL `APPROX_COUNT_DISTINCT` | None (computed server-side) | Fast |
 | 7. Scoring | Local computation | None (in-memory) | Instant |

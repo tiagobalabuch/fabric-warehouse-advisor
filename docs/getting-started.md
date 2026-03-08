@@ -46,7 +46,7 @@ You only need the `.whl` file for Fabric.
 
 ### Option A: Per-Notebook Install (Recommended)
 
-1. Upload the `.whl` file to your Lakehouse **Files** area. For detailed instructions on how to upload files, see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse#upload-files).
+1. Upload the `.whl` file to your Lakehouse **Files** area (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse) for detailed upload instructions).
 2. In the first cell of your notebook, run:
 
 ```python
