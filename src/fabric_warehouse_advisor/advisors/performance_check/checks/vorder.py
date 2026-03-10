@@ -21,7 +21,7 @@ from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
     LEVEL_INFO,
-    LEVEL_WARNING,
+    LEVEL_MEDIUM,
     LEVEL_CRITICAL,
     CATEGORY_VORDER,
 )
@@ -79,7 +79,7 @@ def check_vorder(
 
         if not rows:
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_VORDER,
                 check_name="vorder_status_unknown",
                 object_name=warehouse,

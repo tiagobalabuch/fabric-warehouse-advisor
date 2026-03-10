@@ -25,7 +25,7 @@ result = advisor.run()
 | `warehouse_name` | `str` | `""` | **Required.** The Fabric Warehouse or Lakehouse SQL Endpoint name. |
 | `workspace_id` | `str` | `""` | Workspace GUID. Only needed for [cross-workspace](../../cross-workspace.md) access. |
 | `warehouse_id` | `str` | `""` | Warehouse item GUID. Only needed for [cross-workspace](../../cross-workspace.md) access. |
-| `lakehouse_id` | `str` | `""` | Lakehouse item GUID. For cross-workspace access to a Lakehouse SQL Endpoint. |
+| `sql_endpoint_id` | `str` | `""` | SQL Endpoint item GUID. For [cross-workspace](../../cross-workspace.md) access to a Lakehouse SQL Analytics Endpoint. |
 
 ## Scope Filtering
 

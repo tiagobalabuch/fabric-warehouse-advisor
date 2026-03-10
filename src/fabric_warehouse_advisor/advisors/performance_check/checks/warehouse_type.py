@@ -37,7 +37,7 @@ def detect_warehouse_edition(
     warehouse: str,
     workspace_id: str = "",
     warehouse_id: str = "",
-    lakehouse_id: str = "",
+    sql_endpoint_id: str = "",
 ) -> Tuple[str, List[Finding]]:
     """Detect the Fabric item edition.
 

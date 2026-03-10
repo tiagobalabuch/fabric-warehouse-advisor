@@ -22,7 +22,8 @@ from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
     LEVEL_INFO,
-    LEVEL_WARNING,
+    LEVEL_LOW,
+    LEVEL_MEDIUM,
     LEVEL_CRITICAL,
     CATEGORY_CACHING,
 )
@@ -103,7 +104,7 @@ def _check_result_cache_status(
         rows = df.collect()
         if not rows:
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_CACHING,
                 check_name="result_cache_status_unknown",
                 object_name=warehouse,
@@ -130,7 +131,7 @@ def _check_result_cache_status(
             ))
         else:
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_CRITICAL,
                 category=CATEGORY_CACHING,
                 check_name="result_cache_disabled",
                 object_name=warehouse,
@@ -230,7 +231,7 @@ def _check_cold_start(
 
             if hit_ratio < config.cache_hit_ratio_warning_threshold:
                 findings.append(Finding(
-                    level=LEVEL_WARNING,
+                    level=LEVEL_MEDIUM,
                     category=CATEGORY_CACHING,
                     check_name="low_cache_hit_ratio",
                     object_name=warehouse,
@@ -255,7 +256,7 @@ def _check_cold_start(
         # Cold start analysis
         if total_cold_starts > 0:
             cold_pct = total_cold_starts / total_queries if total_queries > 0 else 0
-            level = LEVEL_WARNING if cold_pct > 0.3 else LEVEL_INFO
+            level = LEVEL_MEDIUM if cold_pct > 0.3 else LEVEL_LOW
             findings.append(Finding(
                 level=level,
                 category=CATEGORY_CACHING,

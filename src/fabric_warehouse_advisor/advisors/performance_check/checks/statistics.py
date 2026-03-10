@@ -24,7 +24,8 @@ from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
     LEVEL_INFO,
-    LEVEL_WARNING,
+    LEVEL_MEDIUM,
+    LEVEL_HIGH,
     LEVEL_CRITICAL,
     CATEGORY_STATISTICS,
 )
@@ -246,7 +247,7 @@ def _check_proactive_refresh(
         ))
     else:
         findings.append(Finding(
-            level=LEVEL_WARNING,
+            level=LEVEL_MEDIUM,
             category=CATEGORY_STATISTICS,
             check_name="proactive_refresh_off",
             object_name=warehouse,
@@ -383,7 +384,7 @@ def _check_stats_health(
                 if age > stale_threshold:
                     days_old = age.days
                     findings.append(Finding(
-                        level=LEVEL_WARNING,
+                        level=LEVEL_HIGH,
                         category=CATEGORY_STATISTICS,
                         check_name="stale_statistics",
                         object_name=fqn,
@@ -440,7 +441,7 @@ def _check_stats_health(
                     if stats_rows_est is not None and stats_rows_est > 0:
                         drift_pct = abs(actual_rows - stats_rows_est) / stats_rows_est * 100
                         if drift_pct > config.row_drift_pct_threshold:
-                            level = LEVEL_CRITICAL if drift_pct > 50 else LEVEL_WARNING
+                            level = LEVEL_CRITICAL if drift_pct > 50 else LEVEL_HIGH
                             fqn = f"[{schema}].[{table}].[{column}]"
                             findings.append(Finding(
                                 level=level,
@@ -477,7 +478,7 @@ def _check_stats_health(
             rc = row_counts.get((schema, table), 0) if row_counts else 0
             if rc > 0:
                 findings.append(Finding(
-                    level=LEVEL_WARNING,
+                    level=LEVEL_HIGH,
                     category=CATEGORY_STATISTICS,
                     check_name="no_statistics",
                     object_name=f"[{schema}].[{table}]",

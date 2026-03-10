@@ -31,9 +31,9 @@ class PerformanceCheckConfig:
         Optional.  The Fabric Warehouse item ID (GUID).
         For cross-workspace access together with ``workspace_id``.
 
-    lakehouse_id : str
-        Optional.  The Fabric Lakehouse item ID (GUID).
-        For cross-workspace access to a Lakehouse SQL Endpoint.
+    sql_endpoint_id : str
+        Optional.  The Fabric SQL Endpoint item ID (GUID).
+        For cross-workspace access to a Lakehouse SQL Analytics Endpoint.
 
     schema_names : list[str]
         Optional list of schemas to restrict analysis to.
@@ -162,7 +162,7 @@ class PerformanceCheckConfig:
     warehouse_name: str = ""
     workspace_id: str = ""
     warehouse_id: str = ""
-    lakehouse_id: str = ""
+    sql_endpoint_id: str = ""
 
     # -- Scope filtering --
     schema_names: list[str] = field(default_factory=list)

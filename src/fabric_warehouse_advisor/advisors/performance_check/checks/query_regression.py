@@ -22,7 +22,7 @@ from ....core.warehouse_reader import read_warehouse_query
 from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
-    LEVEL_WARNING,
+    LEVEL_HIGH,
     LEVEL_CRITICAL,
     LEVEL_INFO,
     CATEGORY_QUERY_REGRESSION,
@@ -151,7 +151,7 @@ def check_query_regression(
         baseline_execs = int(row["baseline_execs"] or 0)
         recent_execs = int(row["recent_execs"] or 0)
 
-        level = LEVEL_CRITICAL if factor >= factor_crit else LEVEL_WARNING
+        level = LEVEL_CRITICAL if factor >= factor_crit else LEVEL_HIGH
 
         findings.append(Finding(
             level=level,

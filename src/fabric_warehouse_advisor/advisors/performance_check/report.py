@@ -12,8 +12,11 @@ from .findings import (
     CheckSummary,
     Finding,
     LEVEL_CRITICAL,
-    LEVEL_WARNING,
+    LEVEL_HIGH,
+    LEVEL_MEDIUM,
+    LEVEL_LOW,
     LEVEL_INFO,
+    SEVERITY_ORDER,
     CATEGORY_WAREHOUSE_TYPE,
     CATEGORY_DATA_TYPES,
     CATEGORY_CACHING,
@@ -47,7 +50,9 @@ _CATEGORY_ORDER = [
 
 _LEVEL_ICONS = {
     LEVEL_CRITICAL: "❌",
-    LEVEL_WARNING: "⚠️",
+    LEVEL_HIGH: "🔴",
+    LEVEL_MEDIUM: "🟠",
+    LEVEL_LOW: "🟡",
     LEVEL_INFO: "✅",
 }
 
@@ -75,7 +80,9 @@ def generate_text_report(summary: CheckSummary) -> str:
     lines.append("━" * w)
     lines.append("  SUMMARY")
     lines.append(f"    ❌ CRITICAL : {summary.critical_count}")
-    lines.append(f"    ⚠️  WARNING  : {summary.warning_count}")
+    lines.append(f"    🔴 HIGH     : {summary.high_count}")
+    lines.append(f"    🟠 MEDIUM   : {summary.medium_count}")
+    lines.append(f"    🟡 LOW      : {summary.low_count}")
     lines.append(f"    ✅ INFO     : {summary.info_count}")
     lines.append(f"    Total      : {len(summary.findings)} findings")
     lines.append("━" * w)
@@ -89,10 +96,12 @@ def generate_text_report(summary: CheckSummary) -> str:
 
         label = _CATEGORY_LABELS.get(cat, cat)
         crit = sum(1 for f in cat_findings if f.is_critical)
-        warn = sum(1 for f in cat_findings if f.is_warning)
+        high = sum(1 for f in cat_findings if f.is_high)
+        med = sum(1 for f in cat_findings if f.is_medium)
+        low = sum(1 for f in cat_findings if f.is_low)
         info = sum(1 for f in cat_findings if f.is_info)
 
-        lines.append(f"━━━ {label.upper()} ({crit} critical, {warn} warnings, {info} info) ━━━")
+        lines.append(f"━━━ {label.upper()} ({crit} critical, {high} high, {med} medium, {low} low, {info} info) ━━━")
         lines.append("")
 
         if cat == CATEGORY_QUERY_REGRESSION:
@@ -159,7 +168,9 @@ def generate_markdown_report(summary: CheckSummary) -> str:
     lines.append(f"| Level | Count |")
     lines.append(f"|-------|-------|")
     lines.append(f"| ❌ Critical | **{summary.critical_count}** |")
-    lines.append(f"| ⚠️ Warning | **{summary.warning_count}** |")
+    lines.append(f"| 🔴 High | **{summary.high_count}** |")
+    lines.append(f"| 🟠 Medium | **{summary.medium_count}** |")
+    lines.append(f"| 🟡 Low | **{summary.low_count}** |")
     lines.append(f"| ✅ Info | {summary.info_count} |")
     lines.append(f"| **Total** | **{len(summary.findings)}** |")
     lines.append("")
@@ -172,13 +183,13 @@ def generate_markdown_report(summary: CheckSummary) -> str:
 
         label = _CATEGORY_LABELS.get(cat, cat)
         crit = sum(1 for f in cat_findings if f.is_critical)
-        warn = sum(1 for f in cat_findings if f.is_warning)
+        high = sum(1 for f in cat_findings if f.is_high)
 
         badge = ""
         if crit > 0:
             badge = f" — ❌ {crit} critical"
-        elif warn > 0:
-            badge = f" — ⚠️ {warn} warnings"
+        elif high > 0:
+            badge = f" — 🔴 {high} high"
 
         lines.append(f"## {label}{badge}")
         lines.append("")
@@ -244,7 +255,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         captured_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     crit_count = summary.critical_count
-    warn_count = summary.warning_count
+    high_count = summary.high_count
+    med_count = summary.medium_count
+    low_count = summary.low_count
     info_count = summary.info_count
 
     html_parts: List[str] = []
@@ -266,7 +279,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
     # Severity summary
     html_parts.append('<div class="summary-grid">')
     html_parts.append(_severity_card("Critical", crit_count, "critical", "\U0001f534"))
-    html_parts.append(_severity_card("Warning", warn_count, "warning", "\U0001f7e0"))
+    html_parts.append(_severity_card("High", high_count, "high", "\U0001f7e0"))
+    html_parts.append(_severity_card("Medium", med_count, "medium", "\U0001f7e1"))
+    html_parts.append(_severity_card("Low", low_count, "low", "\U0001f535"))
     html_parts.append(_severity_card("Info", info_count, "info", "\U0001f7e2"))
     html_parts.append(_severity_card("Total", len(summary.findings), "total", "\U0001f4ca"))
     html_parts.append('</div>')
@@ -279,7 +294,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
 
         label = _CATEGORY_LABELS.get(cat, cat)
         crit = sum(1 for f in cat_findings if f.is_critical)
-        warn = sum(1 for f in cat_findings if f.is_warning)
+        high = sum(1 for f in cat_findings if f.is_high)
+        med = sum(1 for f in cat_findings if f.is_medium)
+        low = sum(1 for f in cat_findings if f.is_low)
         info = sum(1 for f in cat_findings if f.is_info)
 
         cat_id = cat.replace(' ', '-')
@@ -294,7 +311,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         html_parts.append(
             f'<p class="cat-summary" data-cat="{cat_id}">'
             f'<span class="badge critical filter-badge" data-level="critical" data-cat="{cat_id}">{crit} critical</span> '
-            f'<span class="badge warning filter-badge" data-level="warning" data-cat="{cat_id}">{warn} warnings</span> '
+            f'<span class="badge high filter-badge" data-level="high" data-cat="{cat_id}">{high} high</span> '
+            f'<span class="badge medium filter-badge" data-level="medium" data-cat="{cat_id}">{med} medium</span> '
+            f'<span class="badge low filter-badge" data-level="low" data-cat="{cat_id}">{low} low</span> '
             f'<span class="badge info filter-badge" data-level="info" data-cat="{cat_id}">{info} info</span>'
             f'</p>'
         )
@@ -422,7 +441,9 @@ _HTML_HEAD = """<!DOCTYPE html>
     --fabric-blue: #0078d4;
     --fabric-dark: #1a1a2e;
     --critical-red: #d32f2f;
-    --warning-amber: #f57c00;
+    --high-orange: #e65100;
+    --medium-amber: #f57c00;
+    --low-yellow: #fbc02d;
     --info-green: #388e3c;
     --bg: #f5f5f5;
     --card-bg: #ffffff;
@@ -465,7 +486,9 @@ _HTML_HEAD = """<!DOCTYPE html>
   .card-label { font-size: 0.85em; color: #666; margin-bottom: 4px; }
   .card-value { font-size: 1.4em; font-weight: 600; }
   .severity-critical .card-value { color: var(--critical-red); }
-  .severity-warning .card-value { color: var(--warning-amber); }
+  .severity-high .card-value { color: var(--high-orange); }
+  .severity-medium .card-value { color: var(--medium-amber); }
+  .severity-low .card-value { color: var(--low-yellow); }
   .severity-info .card-value { color: var(--info-green); }
   .severity-total .card-value { color: var(--fabric-blue); }
   .meta-bar {
@@ -488,7 +511,9 @@ _HTML_HEAD = """<!DOCTYPE html>
     color: #fff;
   }
   .badge.critical { background: var(--critical-red); }
-  .badge.warning { background: var(--warning-amber); }
+  .badge.high { background: var(--high-orange); }
+  .badge.medium { background: var(--medium-amber); }
+  .badge.low { background: var(--low-yellow); color: #333; }
   .badge.info { background: var(--info-green); }
   table {
     width: 100%;
@@ -514,7 +539,9 @@ _HTML_HEAD = """<!DOCTYPE html>
   }
   tr:last-child td { border-bottom: none; }
   tr.finding-critical { border-left: 4px solid var(--critical-red); }
-  tr.finding-warning { border-left: 4px solid var(--warning-amber); }
+  tr.finding-high { border-left: 4px solid var(--high-orange); }
+  tr.finding-medium { border-left: 4px solid var(--medium-amber); }
+  tr.finding-low { border-left: 4px solid var(--low-yellow); }
   tr.finding-info { border-left: 4px solid var(--info-green); }
   code {
     background: #e8e8e8;

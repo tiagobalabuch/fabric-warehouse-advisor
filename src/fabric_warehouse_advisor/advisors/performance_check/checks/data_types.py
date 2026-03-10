@@ -29,7 +29,9 @@ from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
     LEVEL_INFO,
-    LEVEL_WARNING,
+    LEVEL_LOW,
+    LEVEL_MEDIUM,
+    LEVEL_HIGH,
     LEVEL_CRITICAL,
     CATEGORY_DATA_TYPES,
 )
@@ -178,7 +180,7 @@ def check_data_types(
               and max_length >= config.oversized_varchar_threshold
               and max_length != -1):
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_DATA_TYPES,
                 check_name="oversized_varchar",
                 object_name=fqn,
@@ -203,7 +205,7 @@ def check_data_types(
         # --- CHAR vs VARCHAR ---
         if config.char_to_varchar_warning and data_type == "char":
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_LOW,
                 category=CATEGORY_DATA_TYPES,
                 check_name="char_used_instead_of_varchar",
                 object_name=fqn,
@@ -227,7 +229,7 @@ def check_data_types(
         # --- NVARCHAR vs VARCHAR ---
         if config.nvarchar_to_varchar_warning and data_type == "nvarchar" and max_length != -1:
             findings.append(Finding(
-                level=LEVEL_INFO,
+                level=LEVEL_LOW,
                 category=CATEGORY_DATA_TYPES,
                 check_name="nvarchar_review_needed",
                 object_name=fqn,
@@ -248,7 +250,7 @@ def check_data_types(
             and precision is not None
             and precision > config.decimal_over_precision_threshold):
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_DATA_TYPES,
                 check_name="decimal_over_precision",
                 object_name=fqn,
@@ -272,7 +274,7 @@ def check_data_types(
             and data_type in ("float", "real")
             and _MONEY_NAME_PATTERN.search(column)):
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_DATA_TYPES,
                 check_name="float_for_monetary_data",
                 object_name=fqn,
@@ -294,7 +296,7 @@ def check_data_types(
             and data_type == "bigint"
             and _SMALL_RANGE_NAME_PATTERN.search(column)):
             findings.append(Finding(
-                level=LEVEL_INFO,
+                level=LEVEL_LOW,
                 category=CATEGORY_DATA_TYPES,
                 check_name="bigint_for_small_range",
                 object_name=fqn,
@@ -317,7 +319,7 @@ def check_data_types(
             and max_length != -1
             and _DATE_NAME_PATTERN.search(column)):
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_HIGH,
                 category=CATEGORY_DATA_TYPES,
                 check_name="datetime_stored_as_string",
                 object_name=fqn,
@@ -340,7 +342,7 @@ def check_data_types(
             and is_nullable == "YES"
             and _looks_like_required_column(column)):
             findings.append(Finding(
-                level=LEVEL_INFO,
+                level=LEVEL_MEDIUM,
                 category=CATEGORY_DATA_TYPES,
                 check_name="nullable_column",
                 object_name=fqn,

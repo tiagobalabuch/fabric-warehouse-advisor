@@ -98,8 +98,16 @@ class PerformanceCheckResult:
         return sum(1 for f in self.findings if f.is_critical)
 
     @property
-    def warning_count(self) -> int:
-        return sum(1 for f in self.findings if f.is_warning)
+    def high_count(self) -> int:
+        return sum(1 for f in self.findings if f.is_high)
+
+    @property
+    def medium_count(self) -> int:
+        return sum(1 for f in self.findings if f.is_medium)
+
+    @property
+    def low_count(self) -> int:
+        return sum(1 for f in self.findings if f.is_low)
 
     @property
     def info_count(self) -> int:
@@ -181,7 +189,7 @@ class PerformanceCheckAdvisor:
             return
         self._log_header("Findings Detail")
         for f in findings:
-            icon = {"CRITICAL": "❌", "WARNING": "⚠️", "INFO": "✅"}.get(f.level, "•")
+            icon = {"CRITICAL": "❌", "HIGH": "🔴", "MEDIUM": "🟠", "LOW": "🟡", "INFO": "✅"}.get(f.level, "•")
             self._log(f"    {icon} [{f.level}] {f.object_name}")
             self._log(f"       Check : {f.check_name}")
             self._log(f"       Msg   : {f.message}")
@@ -246,7 +254,7 @@ class PerformanceCheckAdvisor:
         print("Phase 0: Detecting warehouse edition ...")
         edition, edition_findings = detect_warehouse_edition(
             spark, cfg.warehouse_name,
-            cfg.workspace_id, cfg.warehouse_id, cfg.lakehouse_id,
+            cfg.workspace_id, cfg.warehouse_id, cfg.sql_endpoint_id,
         )
         all_findings.extend(edition_findings)
         self._log(f"  Edition: {edition}")
@@ -268,10 +276,12 @@ class PerformanceCheckAdvisor:
             total_tables = max(total_tables, dt_tables)
             total_columns = max(total_columns, dt_columns)
             _ct = sum(1 for f in dt_findings if f.is_critical)
-            _wt = sum(1 for f in dt_findings if f.is_warning)
+            _ht = sum(1 for f in dt_findings if f.is_high)
+            _mt = sum(1 for f in dt_findings if f.is_medium)
+            _lt = sum(1 for f in dt_findings if f.is_low)
             _it = sum(1 for f in dt_findings if f.is_info)
             self._log(f"  Tables: {dt_tables} | Columns: {dt_columns}")
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(dt_findings)
             _phase_timings["Phase 1: Data types"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 1 completed in {_phase_timings['Phase 1: Data types']:.2f}s")
@@ -288,9 +298,11 @@ class PerformanceCheckAdvisor:
             cache_findings = check_caching(spark, cfg.warehouse_name, cfg)
             all_findings.extend(cache_findings)
             _ct = sum(1 for f in cache_findings if f.is_critical)
-            _wt = sum(1 for f in cache_findings if f.is_warning)
+            _ht = sum(1 for f in cache_findings if f.is_high)
+            _mt = sum(1 for f in cache_findings if f.is_medium)
+            _lt = sum(1 for f in cache_findings if f.is_low)
             _it = sum(1 for f in cache_findings if f.is_info)
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(cache_findings)
             _phase_timings["Phase 2: Caching"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 2 completed in {_phase_timings['Phase 2: Caching']:.2f}s")
@@ -309,9 +321,11 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(vorder_findings)
             _ct = sum(1 for f in vorder_findings if f.is_critical)
-            _wt = sum(1 for f in vorder_findings if f.is_warning)
+            _ht = sum(1 for f in vorder_findings if f.is_high)
+            _mt = sum(1 for f in vorder_findings if f.is_medium)
+            _lt = sum(1 for f in vorder_findings if f.is_low)
             _it = sum(1 for f in vorder_findings if f.is_info)
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(vorder_findings)
             _phase_timings["Phase 3: V-Order"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 3 completed in {_phase_timings['Phase 3: V-Order']:.2f}s")
@@ -330,9 +344,11 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(stats_findings)
             _ct = sum(1 for f in stats_findings if f.is_critical)
-            _wt = sum(1 for f in stats_findings if f.is_warning)
+            _ht = sum(1 for f in stats_findings if f.is_high)
+            _mt = sum(1 for f in stats_findings if f.is_medium)
+            _lt = sum(1 for f in stats_findings if f.is_low)
             _it = sum(1 for f in stats_findings if f.is_info)
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(stats_findings)
             _phase_timings["Phase 4: Statistics"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 4 completed in {_phase_timings['Phase 4: Statistics']:.2f}s")
@@ -351,9 +367,11 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(collation_findings)
             _ct = sum(1 for f in collation_findings if f.is_critical)
-            _wt = sum(1 for f in collation_findings if f.is_warning)
+            _ht = sum(1 for f in collation_findings if f.is_high)
+            _mt = sum(1 for f in collation_findings if f.is_medium)
+            _lt = sum(1 for f in collation_findings if f.is_low)
             _it = sum(1 for f in collation_findings if f.is_info)
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(collation_findings)
             _phase_timings["Phase 5: Collation"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 5 completed in {_phase_timings['Phase 5: Collation']:.2f}s")
@@ -372,9 +390,11 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(regression_findings)
             _ct = sum(1 for f in regression_findings if f.is_critical)
-            _wt = sum(1 for f in regression_findings if f.is_warning)
+            _ht = sum(1 for f in regression_findings if f.is_high)
+            _mt = sum(1 for f in regression_findings if f.is_medium)
+            _lt = sum(1 for f in regression_findings if f.is_low)
             _it = sum(1 for f in regression_findings if f.is_info)
-            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
             self._log_findings_detail(regression_findings)
             _phase_timings["Phase 6: Query regression"] = time.perf_counter() - _t0
             self._log(f"  ⏱ Phase 6 completed in {_phase_timings['Phase 6: Query regression']:.2f}s")
@@ -409,7 +429,9 @@ class PerformanceCheckAdvisor:
         print(f"  SUMMARY")
         print(f"  Edition   : {edition}")
         print(f"  CRITICAL  : {summary.critical_count}")
-        print(f"  WARNING   : {summary.warning_count}")
+        print(f"  HIGH      : {summary.high_count}")
+        print(f"  MEDIUM    : {summary.medium_count}")
+        print(f"  LOW       : {summary.low_count}")
         print(f"  INFO      : {summary.info_count}")
         print(f"  Total     : {len(all_findings)} findings")
         print("═" * 52)

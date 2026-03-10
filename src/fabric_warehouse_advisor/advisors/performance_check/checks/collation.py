@@ -20,7 +20,7 @@ from ..config import PerformanceCheckConfig
 from ..findings import (
     Finding,
     LEVEL_INFO,
-    LEVEL_WARNING,
+    LEVEL_HIGH,
     CATEGORY_COLLATION,
 )
 
@@ -127,7 +127,7 @@ def check_collation(
             mismatch_count += 1
             fqn = f"[{schema}].[{table}].[{column}]"
             findings.append(Finding(
-                level=LEVEL_WARNING,
+                level=LEVEL_HIGH,
                 category=CATEGORY_COLLATION,
                 check_name="collation_mismatch",
                 object_name=fqn,
