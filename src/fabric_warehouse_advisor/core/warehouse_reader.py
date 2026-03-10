@@ -98,15 +98,40 @@ def read_warehouse_table(
     table_name: str,
     workspace_id: str = "",
     warehouse_id: str = "",
+    max_retries: int = 5,
 ) -> DataFrame:
-    """Read a *user* table from Fabric Warehouse via three-part naming."""
+    """Read a *user* table from Fabric Warehouse via three-part naming.
+
+    Automatically retries on HTTP 429 (throttling) with exponential
+    back-off (4s, 8s, 16s, 32s — ~60s total).
+    """
     three_part = f"{warehouse}.{schema}.{table_name}"
-    reader = spark.read
-    if workspace_id:
-        reader = reader.option(_FabricConstants.WorkspaceId, workspace_id)
-    if warehouse_id:
-        reader = reader.option(_FabricConstants.DatawarehouseId, warehouse_id)
-    return reader.synapsesql(three_part)
+
+    last_exc: Exception | None = None
+    for attempt in range(max_retries):
+        try:
+            reader = spark.read
+            if workspace_id:
+                reader = reader.option(_FabricConstants.WorkspaceId, workspace_id)
+            if warehouse_id:
+                reader = reader.option(_FabricConstants.DatawarehouseId, warehouse_id)
+            return reader.synapsesql(three_part)
+        except Exception as exc:
+            last_exc = exc
+            if "429" in str(exc) and attempt < max_retries - 1:
+                wait = 4 * 2 ** attempt
+                print(
+                    f"  \u26a0 HTTP 429 throttled — retrying in {wait}s "
+                    f"(attempt {attempt + 1}/{max_retries})..."
+                )
+                time.sleep(wait)
+                continue
+            raise
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError(
+        "read_warehouse_table failed after retries without capturing an exception"
+    )
 
 
 # ------------------------------------------------------------------

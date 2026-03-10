@@ -367,8 +367,14 @@ def build_table_recommendations(
         ddl_parts = []
         if generate_ctas:
             for c in candidates:
+                # SQL Server identifier limit is 128 characters
+                max_id_len = 128
+                suffix = f"_clust_{c.column_name}"
+                if len(table) + len(suffix) > max_id_len:
+                    suffix = suffix[:max_id_len - len(table)]
+                new_table = f"{table}{suffix}"
                 ddl_parts.append(
-                    f"CREATE TABLE [{schema}].[{table}_clustering_{c.column_name}]\n"
+                    f"CREATE TABLE [{schema}].[{new_table}]\n"
                     f"WITH (CLUSTER BY ([{c.column_name}]))\n"
                     f"AS SELECT * FROM [{schema}].[{table}];"
                 )
