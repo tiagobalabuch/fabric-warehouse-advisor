@@ -1,6 +1,6 @@
 # How It Works
 
-The Performance Check advisor runs a **7-phase pipeline** that detects
+The Performance Check advisor runs a **7-phase pipeline (Phases 0–6)** that detects
 the warehouse edition, then scans for data-type anti-patterns, caching
 misconfigurations, V-Order issues, statistics health problems, collation
 mismatches, and query regressions.

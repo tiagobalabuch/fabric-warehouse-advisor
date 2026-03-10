@@ -13,7 +13,7 @@ Fabric Warehouse Advisor framework.
 
 ```python
 # Option A: install from Lakehouse Files
-%pip install /lakehouse/default/Files/fabric_warehouse_advisor-{VERSION}-py3-none-any.whl
+%pip install /lakehouse/default/Files/fabric_warehouse_advisor-<VERSION>-py3-none-any.whl
 
 # Option B: attach a Fabric Environment with the wheel pre-installed
 ```
