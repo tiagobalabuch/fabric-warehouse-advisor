@@ -25,48 +25,51 @@ from ..findings import (
     LEVEL_HIGH,
     LEVEL_CRITICAL,
     LEVEL_INFO,
+    LEVEL_MEDIUM,
     CATEGORY_QUERY_REGRESSION,
 )
 
 
 # -- SQL ----------------------------------------------------------------
+# Fabric's SQL endpoint requires PERCENTILE_CONT with OVER() rather than
+# the WITHIN GROUP (ORDER BY ...) aggregate form.  We use a subquery with
+# the window function and then group to get one row per query_hash.
 
-_REGRESSION_QUERY = """
-WITH baseline AS (
+_BASELINE_QUERY = """
+SELECT
+    query_hash,
+    COUNT(*)                                                        AS baseline_execs,
+    CAST(MAX(pct_median) AS decimal(18,2))                          AS baseline_median_ms
+FROM (
     SELECT
         query_hash,
-        COUNT(*)                                                    AS baseline_execs,
-        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_elapsed_time_ms) AS baseline_median_ms
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_elapsed_time_ms)
+            OVER (PARTITION BY query_hash)                          AS pct_median
     FROM queryinsights.exec_requests_history
     WHERE start_time >= DATEADD(day, -30, GETUTCDATE())
       AND start_time <  DATEADD(day, -{lookback_days}, GETUTCDATE())
-    GROUP BY query_hash
-    HAVING COUNT(*) >= {min_execs}
-),
-recent AS (
+) sub
+GROUP BY query_hash
+HAVING COUNT(*) >= {min_execs}
+"""
+
+_RECENT_QUERY = """
+SELECT
+    query_hash,
+    COUNT(*)                                                        AS recent_execs,
+    CAST(MAX(pct_median) AS decimal(18,2))                          AS recent_median_ms,
+    LEFT(MAX(command), 200)                                         AS query_text_preview
+FROM (
     SELECT
         query_hash,
-        COUNT(*)                                                    AS recent_execs,
-        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_elapsed_time_ms) AS recent_median_ms,
-        MAX(command)                                                AS last_command
+        command,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_elapsed_time_ms)
+            OVER (PARTITION BY query_hash)                          AS pct_median
     FROM queryinsights.exec_requests_history
     WHERE start_time >= DATEADD(day, -{lookback_days}, GETUTCDATE())
-    GROUP BY query_hash
-    HAVING COUNT(*) >= {min_execs}
-)
-SELECT
-    r.query_hash,
-    LEFT(r.last_command, 200)                                      AS query_text_preview,
-    b.baseline_execs,
-    r.recent_execs,
-    CAST(b.baseline_median_ms AS decimal(12,2))                    AS baseline_median_ms,
-    CAST(r.recent_median_ms  AS decimal(12,2))                     AS recent_median_ms,
-    CAST(r.recent_median_ms / NULLIF(b.baseline_median_ms, 0)
-         AS decimal(10,2))                                         AS regression_factor
-FROM recent r
-JOIN baseline b ON b.query_hash = r.query_hash
-WHERE r.recent_median_ms > b.baseline_median_ms * {factor_threshold}
-ORDER BY regression_factor DESC
+) sub
+GROUP BY query_hash
+HAVING COUNT(*) >= {min_execs}
 """
 
 
@@ -104,31 +107,57 @@ def check_query_regression(
     factor_warn = config.regression_factor_warning
     factor_crit = config.regression_factor_critical
 
-    query = _REGRESSION_QUERY.format(
+    baseline_sql = _BASELINE_QUERY.format(
         lookback_days=int(lookback),
         min_execs=int(min_execs),
-        factor_threshold=float(factor_warn),
+    )
+    recent_sql = _RECENT_QUERY.format(
+        lookback_days=int(lookback),
+        min_execs=int(min_execs),
     )
 
     try:
-        df = read_warehouse_query(
-            spark, warehouse, query,
+        baseline_df = read_warehouse_query(
+            spark, warehouse, baseline_sql,
+            config.workspace_id, config.warehouse_id,
+        )
+        recent_df = read_warehouse_query(
+            spark, warehouse, recent_sql,
             config.workspace_id, config.warehouse_id,
         )
     except Exception as exc:
         findings.append(Finding(
-            level=LEVEL_INFO,
+            level=LEVEL_MEDIUM,
             category=CATEGORY_QUERY_REGRESSION,
             check_name="regression_check_error",
             object_name=warehouse,
             message="Query regression check could not be executed.",
             detail=str(exc)[:300],
+            recommendation=(
+                "Verify that queryinsights.exec_requests_history is accessible "
+                "and that the Spark session has sufficient permissions."
+            ),
         ))
         return findings
 
-    rows = df.collect()
+    # Join in PySpark to avoid connector issues with complex CTEs
+    baseline_rows = {row["query_hash"]: row for row in baseline_df.collect()}
+    recent_rows = recent_df.collect()
 
-    if not rows:
+    matched = []
+    for r in recent_rows:
+        b = baseline_rows.get(r["query_hash"])
+        if b is None:
+            continue
+        baseline_ms = float(b["baseline_median_ms"] or 0)
+        recent_ms = float(r["recent_median_ms"] or 0)
+        if baseline_ms <= 0:
+            continue
+        factor = recent_ms / baseline_ms
+        if factor >= factor_warn:
+            matched.append((r, b, factor))
+
+    if not matched:
         findings.append(Finding(
             level=LEVEL_INFO,
             category=CATEGORY_QUERY_REGRESSION,
@@ -142,14 +171,16 @@ def check_query_regression(
         ))
         return findings
 
-    for row in rows:
-        q_hash = str(row["query_hash"] or "unknown")
-        preview = str(row["query_text_preview"] or "")[:200]
-        baseline_ms = float(row["baseline_median_ms"] or 0)
-        recent_ms = float(row["recent_median_ms"] or 0)
-        factor = float(row["regression_factor"] or 0)
-        baseline_execs = int(row["baseline_execs"] or 0)
-        recent_execs = int(row["recent_execs"] or 0)
+    # Sort by regression factor descending
+    matched.sort(key=lambda x: x[2], reverse=True)
+
+    for r, b, factor in matched:
+        q_hash = str(r["query_hash"] or "unknown")
+        preview = str(r["query_text_preview"] or "")[:200]
+        baseline_ms = float(b["baseline_median_ms"] or 0)
+        recent_ms = float(r["recent_median_ms"] or 0)
+        baseline_execs = int(b["baseline_execs"] or 0)
+        recent_execs = int(r["recent_execs"] or 0)
 
         level = LEVEL_CRITICAL if factor >= factor_crit else LEVEL_HIGH
 

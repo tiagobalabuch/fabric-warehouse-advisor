@@ -411,6 +411,9 @@ def _check_stats_health(
                             f"UPDATE STATISTICS [{_quote_ident(schema)}].[{_quote_ident(table)}] "
                             f"([{_quote_ident(stats_name)}]) WITH FULLSCAN;"
                         ),
+                    ))
+            except (TypeError, ValueError):
+                pass  # Could not parse date; skip staleness check
 
     # --- Row count drift ---
     for (schema, table), stats_list in stats_by_table.items():
