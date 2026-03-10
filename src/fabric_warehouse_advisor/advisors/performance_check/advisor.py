@@ -36,6 +36,7 @@ from .checks.caching import check_caching
 from .checks.vorder import check_vorder
 from .checks.statistics import check_statistics
 from .checks.collation import check_collation
+from .checks.query_regression import check_query_regression
 from .report import (
     generate_text_report,
     generate_markdown_report,
@@ -229,6 +230,7 @@ class PerformanceCheckAdvisor:
         self._log_kv("check_statistics", cfg.check_statistics)
         self._log_kv("check_vorder", cfg.check_vorder)
         self._log_kv("check_collation", cfg.check_collation)
+        self._log_kv("check_query_regression", cfg.check_query_regression)
         self._log_footer()
 
         _run_start = time.perf_counter()
@@ -357,6 +359,27 @@ class PerformanceCheckAdvisor:
             self._log(f"  ⏱ Phase 5 completed in {_phase_timings['Phase 5: Collation']:.2f}s")
         else:
             self._log("Phase 5: Collation check — SKIPPED (disabled in config)")
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+        # ================================================================
+        # Phase 6: Query Regression Detection
+        # ================================================================
+        if cfg.check_query_regression:
+            _t0 = time.perf_counter()
+            print("Phase 6: Detecting query regressions ...")
+            regression_findings = check_query_regression(
+                spark, cfg.warehouse_name, cfg,
+            )
+            all_findings.extend(regression_findings)
+            _ct = sum(1 for f in regression_findings if f.is_critical)
+            _wt = sum(1 for f in regression_findings if f.is_warning)
+            _it = sum(1 for f in regression_findings if f.is_info)
+            self._log(f"  Findings: {_ct} critical, {_wt} warnings, {_it} info")
+            self._log_findings_detail(regression_findings)
+            _phase_timings["Phase 6: Query regression"] = time.perf_counter() - _t0
+            self._log(f"  ⏱ Phase 6 completed in {_phase_timings['Phase 6: Query regression']:.2f}s")
+        else:
+            self._log("Phase 6: Query regression — SKIPPED (disabled in config)")
 
         # ================================================================
         # Build summary and reports

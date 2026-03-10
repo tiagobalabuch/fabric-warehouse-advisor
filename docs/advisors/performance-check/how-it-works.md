@@ -1,8 +1,9 @@
 # How It Works
 
-The Performance Check advisor runs a **5-phase pipeline** that detects
+The Performance Check advisor runs a **7-phase pipeline** that detects
 the warehouse edition, then scans for data-type anti-patterns, caching
-misconfigurations, V-Order issues, and statistics health problems.
+misconfigurations, V-Order issues, statistics health problems, collation
+mismatches, and query regressions.
 
 ## Architecture Overview
 
@@ -16,7 +17,9 @@ misconfigurations, V-Order issues, and statistics health problems.
 │  ├─ Phase 1: Data Types          → INFORMATION_SCHEMA.COLUMNS │
 │  ├─ Phase 2: Caching             → sys.databases, queryinsights│
 │  ├─ Phase 3: V-Order             → sys.databases              │
-│  └─ Phase 4: Statistics          → sys.stats, DBCC SHOW_STATS │
+│  ├─ Phase 4: Statistics          → sys.stats, DBCC SHOW_STATS │
+│  ├─ Phase 5: Collation           → sys.columns, sys.databases │
+│  └─ Phase 6: Query Regression    → queryinsights.exec_requests │
 │                                                               │
 │  All SQL runs via T-SQL passthrough (no data transferred to   │
 │  Spark — only metadata and aggregates)                        │
@@ -35,10 +38,10 @@ SELECT CONVERT(varchar(100), DATABASEPROPERTYEX(DB_NAME(), 'Edition')) AS editio
 This is the **gating check** — it determines which subsequent phases
 are applicable:
 
-| Edition | Data Types | Caching | V-Order | Statistics |
-|---------|-----------|---------|---------|-----------|
-| DataWarehouse | Yes | Yes | Yes | Yes |
-| LakeWarehouse | Yes | Yes | **Skipped** | Yes |
+| Edition | Data Types | Caching | V-Order | Statistics | Collation | Query Regression |
+|---------|-----------|---------|---------|-----------|-----------|------------------|
+| DataWarehouse | Yes | Yes | Yes | Yes | Yes | Yes |
+| LakeWarehouse | Yes | Yes | **Skipped** | Yes | Yes | Yes |
 
 ## Phase 1: Data Type Analysis
 
@@ -143,15 +146,52 @@ Queries `sys.stats` joined with `sys.objects`, `sys.stats_columns`, and
 Identifies user tables that have no statistics objects at all —
 typically new tables that haven't been queried yet.
 
+## Phase 5: Collation Consistency
+
+Checks column-level collation against the database default collation.
+Mismatched collation can cause implicit conversions in joins and
+comparisons, preventing predicate push-down.
+
+```sql
+SELECT collation_name FROM sys.databases WHERE database_id = DB_ID()
+```
+
+- All columns match database collation → INFO
+- Column collation differs → WARNING
+
+## Phase 6: Query Regression Detection
+
+Compares recent query performance against a historical baseline
+using `queryinsights.exec_requests_history`.
+
+!!! note "Warehouse-wide"
+    This check runs warehouse-wide and is **not** filtered by
+    `schema_names` / `table_names` selections.
+
+The 30-day Query Insights retention window is split into two periods:
+
+- **Baseline**: days 8–30 (configurable via `regression_lookback_days`)
+- **Recent**: last 7 days (default)
+
+Query shapes are identified by `query_hash`. Both windows require a
+minimum number of executions (`regression_min_executions`, default: 3)
+to filter noise.
+
+| Regression factor | Level |
+|---|---|
+| ≥ 5× baseline | CRITICAL |
+| ≥ 2× baseline | WARNING |
+
 ## Data Flow
 
 ```text
 Phase 0 (edition) ──────────────── gates Phase 3
 Phase 1 (data types) ──────────┐
 Phase 2 (caching) ─────────────┤
-Phase 3 (V-Order) ─────────────┼──► Report Generation
-Phase 4 (statistics) ──────────┘        │
-                                        ▼
+Phase 3 (V-Order) ─────────────┤
+Phase 4 (statistics) ──────────┼──► Report Generation
+Phase 5 (collation) ───────────┤        │
+Phase 6 (query regression) ────┘        ▼
                                PerformanceCheckResult
                                ├── findings[]
                                ├── summary (CheckSummary)
@@ -169,6 +209,8 @@ Phase 4 (statistics) ──────────┘        │
 | 2. Caching | T-SQL passthrough | Aggregated stats (~KB) | Fast |
 | 3. V-Order | T-SQL passthrough | ~1 row | Instant |
 | 4. Statistics | T-SQL passthrough + DBCC | Metadata + stat headers | Fast |
+| 5. Collation | T-SQL passthrough | Column metadata (~KB) | Fast |
+| 6. Query Regression | T-SQL passthrough | Aggregated medians (~KB) | Fast |
 
 No user data is ever transferred to Spark — only metadata, counts,
 and aggregates.

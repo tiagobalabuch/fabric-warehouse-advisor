@@ -26,6 +26,7 @@ CATEGORY_CACHING = "caching"
 CATEGORY_STATISTICS = "statistics"
 CATEGORY_VORDER = "vorder"
 CATEGORY_COLLATION = "collation"
+CATEGORY_QUERY_REGRESSION = "query_regression"
 
 
 @dataclass

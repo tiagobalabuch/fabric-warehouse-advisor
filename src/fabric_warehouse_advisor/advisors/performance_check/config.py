@@ -129,6 +129,27 @@ class PerformanceCheckConfig:
     vorder_warn_if_disabled : bool
         Warn if V-Order is disabled on the warehouse.
 
+    check_query_regression : bool
+        Enable the query regression detection check.
+        Compares recent query performance against a historical baseline
+        within the 30-day Query Insights window.
+
+    regression_lookback_days : int
+        Number of days that define the "recent" window. The baseline
+        is the period from 30 days ago up to this many days ago.
+
+    regression_factor_warning : float
+        Flag a query as WARNING when its recent median is at least
+        this many times the baseline median.
+
+    regression_factor_critical : float
+        Flag a query as CRITICAL when its recent median is at least
+        this many times the baseline median.
+
+    regression_min_executions : int
+        Minimum number of executions a query must have in **both**
+        baseline and recent windows to be considered.
+
     verbose : bool
         If ``True``, print intermediate details for debugging.
 
@@ -180,6 +201,13 @@ class PerformanceCheckConfig:
 
     # -- V-Order settings --
     vorder_warn_if_disabled: bool = True
+
+    # -- Query Regression settings --
+    check_query_regression: bool = True
+    regression_lookback_days: int = 7
+    regression_factor_warning: float = 2.0
+    regression_factor_critical: float = 5.0
+    regression_min_executions: int = 3
 
     # -- Output --
     verbose: bool = False

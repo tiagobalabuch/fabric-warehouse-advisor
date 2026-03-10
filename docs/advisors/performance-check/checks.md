@@ -1,6 +1,6 @@
 # Check Categories
 
-The Performance Check advisor runs up to **5 check categories**, each
+The Performance Check advisor runs up to **7 check categories**, each
 targeting a different area of warehouse health.  Every finding includes
 a severity level, a human-readable message, and — where applicable — a
 ready-to-run T-SQL fix.
@@ -255,6 +255,58 @@ Enable proactive refresh:
 ALTER DATABASE CURRENT
 SET PROACTIVE_STATS_COLLECTION = ON;
 ```
+
+---
+
+## 6. Query Regression
+
+| Property | Value |
+|----------|-------|
+| Category constant | `CATEGORY_QUERY_REGRESSION` |
+| Config toggle | `check_query_regression` |
+| Applies to | DataWarehouse, LakeWarehouse |
+
+Detects query shapes whose recent performance has significantly
+regressed compared to a historical baseline. Both windows are
+computed from `queryinsights.exec_requests_history`, ensuring
+no overlap between baseline and recent periods.
+
+!!! note "Warehouse-wide"
+    This check runs warehouse-wide and is **not** filtered by
+    `schema_names` / `table_names` selections.
+
+### Full Check List
+
+| Check Name | Level | What It Detects |
+|-----------|-------|------------------|
+| `query_regression_detected` | WARNING | Query median elapsed time ≥ 2× baseline median (`regression_factor_warning`) |
+| `query_regression_detected` | CRITICAL | Query median elapsed time ≥ 5× baseline median (`regression_factor_critical`) |
+| `no_regression_detected` | INFO | No regressions found within configured thresholds |
+| `regression_check_error` | INFO | Check could not be executed (query error) |
+
+### How It Works
+
+The 30-day Query Insights retention window is split into:
+
+- **Baseline**: `DATEADD(day, -30, GETUTCDATE())` to `DATEADD(day, -N, GETUTCDATE())`
+- **Recent**: last *N* days (configured by `regression_lookback_days`, default: 7)
+
+For each `query_hash`, the median `total_elapsed_time_ms` is computed
+using `PERCENTILE_CONT(0.5)`. Both windows require at least
+`regression_min_executions` (default: 3) runs.
+
+The **regression factor** = recent_median / baseline_median. Queries
+exceeding the warning threshold are flagged.
+
+### Configuration
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `check_query_regression` | `True` | Enable/disable the check |
+| `regression_lookback_days` | `7` | Number of days in the "recent" window |
+| `regression_factor_warning` | `2.0` | Trigger WARNING at this multiplier |
+| `regression_factor_critical` | `5.0` | Trigger CRITICAL at this multiplier |
+| `regression_min_executions` | `3` | Minimum executions in each window |
 
 ---
 

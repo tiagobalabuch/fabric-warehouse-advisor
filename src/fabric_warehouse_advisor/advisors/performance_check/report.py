@@ -20,6 +20,7 @@ from .findings import (
     CATEGORY_STATISTICS,
     CATEGORY_VORDER,
     CATEGORY_COLLATION,
+    CATEGORY_QUERY_REGRESSION,
 )
 
 
@@ -32,6 +33,7 @@ _CATEGORY_LABELS = {
     CATEGORY_VORDER: "V-Order Optimization",
     CATEGORY_STATISTICS: "Statistics Health",
     CATEGORY_COLLATION: "Collation Consistency",
+    CATEGORY_QUERY_REGRESSION: "Query Regression",
 }
 
 _CATEGORY_ORDER = [
@@ -40,6 +42,7 @@ _CATEGORY_ORDER = [
     CATEGORY_VORDER,
     CATEGORY_STATISTICS,
     CATEGORY_COLLATION,
+    CATEGORY_QUERY_REGRESSION,
 ]
 
 _LEVEL_ICONS = {
@@ -91,6 +94,11 @@ def generate_text_report(summary: CheckSummary) -> str:
 
         lines.append(f"━━━ {label.upper()} ({crit} critical, {warn} warnings, {info} info) ━━━")
         lines.append("")
+
+        if cat == CATEGORY_QUERY_REGRESSION:
+            lines.append("  ⚠️  This analysis runs warehouse-wide and is not filtered")
+            lines.append("     by schema/table selections.")
+            lines.append("")
 
         # Group same-check findings for deduplication
         grouped = _group_findings(cat_findings)
@@ -174,6 +182,10 @@ def generate_markdown_report(summary: CheckSummary) -> str:
 
         lines.append(f"## {label}{badge}")
         lines.append("")
+
+        if cat == CATEGORY_QUERY_REGRESSION:
+            lines.append("> **⚠️ Note:** This analysis runs warehouse-wide and is not filtered by schema/table selections.")
+            lines.append("")
 
         grouped = _group_findings(cat_findings)
         for check_name, findings in grouped.items():
@@ -272,6 +284,13 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
 
         cat_id = cat.replace(' ', '-')
         html_parts.append(f'<h2>{label}</h2>')
+        if cat == CATEGORY_QUERY_REGRESSION:
+            html_parts.append(
+                '<div class="meta-bar" style="margin-bottom:12px;">'
+                '⚠️ This analysis runs warehouse-wide and is not filtered '
+                'by schema/table selections.'
+                '</div>'
+            )
         html_parts.append(
             f'<p class="cat-summary" data-cat="{cat_id}">'
             f'<span class="badge critical filter-badge" data-level="critical" data-cat="{cat_id}">{crit} critical</span> '

@@ -13,6 +13,7 @@ findings — no scoring, just clear guidance on what to fix and why.
 | **Caching** | Result set caching status, cache hit ratio, cold-start detection |
 | **V-Order** | V-Order optimization state (DataWarehouse only — irreversible if disabled) |
 | **Statistics** | Auto-create/update stats, proactive refresh, stale statistics, row count drift, tables without statistics |
+| **Query Regression** | Detects query shapes whose recent performance is significantly worse than their historical baseline (warehouse-wide) |
 
 ## Quick Start
 
