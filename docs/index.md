@@ -5,7 +5,7 @@ A **modular PySpark advisory framework** for
 aspect of warehouse health and produces actionable recommendations with
 rich reports.
 
-Everything runs inside a **Fabric Spark notebook** — no external tools,
+Everything runs inside a **Fabric Notebook** — no external tools,
 no data leaves your environment.
 
 ## Available Advisors
@@ -13,7 +13,7 @@ no data leaves your environment.
 | Advisor | What it does | Output |
 |---------|-------------|--------|
 | [**Data Clustering**](advisors/data-clustering/index.md) | Recommends which tables and columns should use `CLUSTER BY` | Scored recommendations (0–100) with CTAS DDL |
-| [**Performance Check**](advisors/performance-check/index.md) | Detects data-type anti-patterns, caching misconfigurations, V-Order issues, and statistics health problems | Findings (Critical / Warning / Info) |
+| [**Performance Check**](advisors/performance-check/index.md) | Detects data-type, query regression, caching misconfigurations, V-Order status, and statistics health problems | Findings (Critical / Warning / Info) |
 
 ## Why use it?
 
@@ -54,11 +54,11 @@ displayHTML(pc_result.html_report)
 | Document | Description |
 |----------|-------------|
 | [Getting Started](getting-started.md) | Installation, first run, prerequisites |
-| **Advisors** | |
+| **Advisors** | [Overview](advisors/index.md) |
 | &nbsp;&nbsp;[Data Clustering](advisors/data-clustering/index.md) | Overview, pipeline, configuration, scoring, reports |
 | &nbsp;&nbsp;[Performance Check](advisors/performance-check/index.md) | Overview, pipeline, configuration, checks reference, reports |
-| [Cross-Workspace](cross-workspace.md) | Analysing warehouses in other workspaces |
-| [Troubleshooting](troubleshooting.md) | Common issues and solutions |
+|[Cross-Workspace](cross-workspace.md) | Analysing warehouses in other workspaces |
+|[Troubleshooting](troubleshooting.md) | Common issues and solutions |
 
 ## License
 

@@ -33,7 +33,6 @@ result = advisor.run()
 |-----------|------|---------|-------------|
 | `schema_names` | `list[str]` | `[]` | Restrict analysis to specific schemas. Empty = all user schemas. |
 | `table_names` | `list[str]` | `[]` | Restrict analysis to specific tables. Each entry can be `"table_name"` (any schema) or `"schema.table_name"`. Empty = all tables. |
-| `min_row_count` | `int` | `0` | Minimum row count for a table to be included. Set to `0` to check all tables. |
 
 Examples:
 
@@ -61,6 +60,8 @@ Each check category can be independently enabled or disabled:
 | `check_caching` | `bool` | `True` | Enable caching configuration analysis. |
 | `check_statistics` | `bool` | `True` | Enable statistics health analysis. |
 | `check_vorder` | `bool` | `True` | Enable V-Order state check. Auto-skipped for LakeWarehouse. |
+| `check_collation` | `bool` | `True` | Enable collation mismatch check. |
+| `check_query_regression` | `bool` | `True` | Enable query regression detection. |
 
 Example — run only the statistics check:
 
@@ -71,6 +72,8 @@ config = PerformanceCheckConfig(
     check_caching=False,
     check_vorder=False,
     check_statistics=True,
+    check_collation=False,
+    check_query_regression=False,
 )
 ```
 
@@ -120,6 +123,15 @@ config = PerformanceCheckConfig(
 | `proactive_refresh_check` | `bool` | `True` | Check if proactive statistics refresh is enabled. |
 | `orphaned_stats_check` | `bool` | `True` | Check for orphaned statistics objects. |
 | `tables_without_stats_check` | `bool` | `True` | Check for tables that have no statistics at all. |
+
+## Query Regression Settings
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `regression_lookback_days` | `int` | `7` | Window (days) defining the "recent" period. Baseline is the preceding historical range within Query Insights' 30-day retention. |
+| `regression_factor_warning` | `float` | `2.0` | Flag a query as WARNING when its recent median duration is at least this many times the baseline median. |
+| `regression_factor_critical` | `float` | `5.0` | Flag a query as CRITICAL when its recent median duration is at least this many times the baseline median. |
+| `regression_min_executions` | `int` | `3` | Minimum executions required in **both** baseline and recent windows before a query is compared. |
 
 ## V-Order Settings
 

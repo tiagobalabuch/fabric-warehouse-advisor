@@ -4,8 +4,7 @@ The Data Clustering Advisor helps you answer a deceptively simple question:
 **which columns in my Fabric Warehouse should I cluster?**
 
 Data Clustering is one of the most impactful performance levers in
-Microsoft Fabric Warehouse — it controls how data is physically organized
-on disk, which directly affects query speed and resource consumption.
+Microsoft Fabric Warehouse — it controls how data is physically organized on OneLake, which directly affects query speed and resource consumption.
 But choosing the *right* columns to cluster on isn't always obvious.
 That's where this advisor comes in.
 

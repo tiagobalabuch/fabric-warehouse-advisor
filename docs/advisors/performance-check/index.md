@@ -34,12 +34,14 @@ displayHTML(result.html_report)
 ## Output Model
 
 Unlike the Data Clustering advisor (which produces scores), the
-Performance Check advisor produces **findings** at three severity levels:
+Performance Check advisor produces **findings** at five severity levels:
 
 | Level | Meaning |
-|-------|---------|
+|-------|--------|
 | **CRITICAL** | Immediate action required — significant performance impact |
-| **WARNING** | Should be reviewed — potential performance improvement |
+| **HIGH** | Important issue — should be addressed soon |
+| **MEDIUM** | Worth reviewing — potential performance improvement |
+| **LOW** | Minor concern — fix when convenient |
 | **INFO** | Informational — current state is healthy or the item is for awareness |
 
 Each finding includes:
@@ -55,22 +57,27 @@ Each finding includes:
 ### Summary Counts
 
 ```python
+# Summary counts by severity
 print(f"Critical: {result.critical_count}")
-print(f"Warning:  {result.warning_count}")
+print(f"High:     {result.high_count}")
+print(f"Medium:   {result.medium_count}")
+print(f"Low:      {result.low_count}")
 print(f"Info:     {result.info_count}")
-print(f"Total:    {len(result.findings)}")
 ```
 
 ### Iterating Findings
 
 ```python
+# Iterate findings (sorted by severity)
 for f in result.findings:
-    print(f"[{f.level}] [{f.category}] {f.object_name}")
-    print(f"  {f.message}")
-    if f.recommendation:
-        print(f"  → {f.recommendation}")
-    if f.sql_fix:
-        print(f"  SQL: {f.sql_fix}")
+    print(f"[{f.level}] {f.object_name}: {f.message}")
+
+# Filter to actionable findings only (excludes INFO)
+for f in result.findings:
+    if f.is_actionable:
+        print(f"[{f.level}] {f.object_name}: {f.message}")
+        if f.recommendation:
+            print(f"  → {f.recommendation}")
 ```
 
 ### Filtering by Category or Level
@@ -78,10 +85,13 @@ for f in result.findings:
 ```python
 # Only critical findings
 critical = [f for f in result.findings if f.is_critical]
+display(dt_findings)
 
 # Only data type findings
 from fabric_warehouse_advisor.advisors.performance_check.findings import CATEGORY_DATA_TYPES
+
 dt_findings = result.summary.findings_by_category(CATEGORY_DATA_TYPES)
+display(dt_findings)
 ```
 
 ### Saving Reports
@@ -96,7 +106,7 @@ result.save("/lakehouse/default/Files/reports/perf_report.txt", "txt")
 
 | Document | Description |
 |----------|-------------|
-| [How It Works](how-it-works.md) | The 5-phase pipeline |
+| [How It Works](how-it-works.md) | The multi-phase pipeline |
 | [Configuration](configuration.md) | Full parameter reference (~40 config fields) |
 | [Checks Reference](checks.md) | Deep dive into each check category |
 | [Reports](reports.md) | Text, Markdown, and HTML report formats |

@@ -9,14 +9,14 @@ and running your first analysis.
 |-------------|-------|
 | **Microsoft Fabric Workspace** | With at least one Fabric Warehouse or Lakehouse SQL Endpoint |
 | **Fabric Notebook** | The advisors run inside a Fabric Spark notebook |
-| **Warehouse access** | The identity running the notebook (your Entra ID / service principal) must have at least **Read access** on the target warehouse |
-| **Same tenant** | The target warehouse must be in the same Fabric tenant |
+| **Warehouse / SQL Endpoint access** | The identity running the notebook (your Entra ID / service principal) must have at least **Read access** on the target Warehouse / SQL Endpoint |
+| **Same tenant** | The target Warehouse / SQL Endpoint must be in the same Fabric tenant |
 | **Python 3.9+** | Only needed if building from source (not required on Fabric) |
 
-> **Note:** No Lakehouse attachment or external data source is required.
-> The Microsoft Fabric Data Warehouse connector is pre-installed in the
-> Fabric Spark runtime, and Query Insights is enabled by default on every
-> Fabric Warehouse.
+!!! note "Prerequisite Note" 
+    A Lakehouse is only required if you plan to upload the `.whl` file to the Lakehouse Files section.
+    The Microsoft Fabric Data Warehouse connector is pre-installed in the
+    Fabric Spark runtime, and Query Insights is enabled by default on every Fabric Warehouse.
 
 ## Getting the Wheel
 
@@ -46,7 +46,7 @@ You only need the `.whl` file for Fabric.
 
 ### Option A: Per-Notebook Install (Recommended)
 
-1. Upload the `.whl` file to your Lakehouse **Files** area (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse) for detailed upload instructions).
+1. Upload the `.whl` file to your Lakehouse **Files** area (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse#upload-files) for detailed upload instructions).
 2. In the first cell of your notebook, run:
 
 ```python
@@ -57,7 +57,7 @@ This is the quickest way to get up and running.
 
 ### Option B: Fabric Environment
 
-For a more permanent setup, you can attach the library to a Fabric Environment:
+For a more permanent setup, you can attach the library to a Fabric Environment (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/create-and-use-environment)):
 
 1. In your Fabric Workspace, create or open an **Environment** resource
 2. Under **Libraries**, upload the `.whl` file
@@ -156,14 +156,23 @@ result.scores_df.write.mode("overwrite").format("delta").saveAsTable(
 The Performance Check advisor provides structured findings:
 
 ```python
-# Summary counts
+# Summary counts by severity
 print(f"Critical: {result.critical_count}")
-print(f"Warning:  {result.warning_count}")
+print(f"High:     {result.high_count}")
+print(f"Medium:   {result.medium_count}")
+print(f"Low:      {result.low_count}")
 print(f"Info:     {result.info_count}")
 
-# Iterate findings
+# Iterate findings (sorted by severity)
 for f in result.findings:
     print(f"[{f.level}] {f.object_name}: {f.message}")
+
+# Filter to actionable findings only (excludes INFO)
+for f in result.findings:
+    if f.is_actionable:
+        print(f"[{f.level}] {f.object_name}: {f.message}")
+        if f.recommendation:
+            print(f"  → {f.recommendation}")
 ```
 
 ## Next Steps

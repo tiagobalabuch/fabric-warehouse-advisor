@@ -8,22 +8,21 @@ mismatches, and query regressions.
 ## Architecture Overview
 
 ```text
-┌───────────────────────────────────────────────────────────────┐
-│                     Fabric Notebook                           │
-│                                                               │
-│  PerformanceCheckAdvisor.run()                                │
-│  │                                                            │
-│  ├─ Phase 0: Edition Detection   → DATABASEPROPERTYEX()       │
-│  ├─ Phase 1: Data Types          → INFORMATION_SCHEMA.COLUMNS │
+┌────────────────────────────────────────────────────────────────┐
+│                     Fabric Notebook                            │
+│                                                                │
+│  │                                                             │
+│  ├─ Phase 0: Edition Detection   → DATABASEPROPERTYEX()        │
+│  ├─ Phase 1: Data Types          → INFORMATION_SCHEMA.COLUMNS  │
 │  ├─ Phase 2: Caching             → sys.databases, queryinsights│
-│  ├─ Phase 3: V-Order             → sys.databases              │
-│  ├─ Phase 4: Statistics          → sys.stats, DBCC SHOW_STATS │
-│  ├─ Phase 5: Collation           → sys.columns, sys.databases │
+│  ├─ Phase 3: V-Order             → sys.databases               │
+│  ├─ Phase 4: Statistics          → sys.stats, DBCC SHOW_STATS  │
+│  ├─ Phase 5: Collation           → sys.columns, sys.databases  │
 │  └─ Phase 6: Query Regression    → queryinsights.exec_requests │
-│                                                               │
-│  All SQL runs via T-SQL passthrough (no data transferred to   │
-│  Spark — only metadata and aggregates)                        │
-└───────────────────────────────────────────────────────────────┘
+│                                                                │
+│  All SQL runs via T-SQL passthrough (no data transferred to    │
+│  Spark — only metadata and aggregates)                         │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ## Phase 0: Warehouse Edition Detection
@@ -138,8 +137,10 @@ Queries `sys.stats` joined with `sys.objects`, `sys.stats_columns`, and
   threshold (`stale_stats_threshold_days`, default: 7 days)
 - **Row drift**: uses `DBCC SHOW_STATISTICS ... WITH STAT_HEADER` to
   compare the statistics row count estimate against the actual row count
-  from `sys.partitions`. Drift above `row_drift_pct_threshold` (default:
-  20%) triggers a WARNING.
+  obtained via `COUNT_BIG(*)` (which Fabric resolves from columnstore
+  metadata). The earlier approach using `sys.partitions` was replaced
+  because it returned `NULL` on Fabric Warehouse. Drift above
+  `row_drift_pct_threshold` (default: 20%) triggers a finding.
 
 ### Sub-check 4d: Tables Without Statistics
 

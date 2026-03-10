@@ -14,17 +14,7 @@ print(result.html_report)       # Self-contained HTML page
 ## Saving Reports
 
 ```python
-result.save("performance_check_output")
-```
-
-Creates three files in the specified directory:
-
-| File | Format |
-|------|--------|
-| `performance_check_output/report.txt` | Plain text |
-| `performance_check_output/report.md` | Markdown |
-| `performance_check_output/report.html` | Self-contained HTML |
-
+result.save("performance_check_report.txt")
 ---
 
 ## Plain Text Report
@@ -44,9 +34,11 @@ Uses Unicode box drawing for a clean terminal-friendly layout.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   SUMMARY
     ❌ CRITICAL : 2
-    ⚠️  WARNING  : 5
+    🔴 HIGH     : 3
+    🟡 MEDIUM   : 4
+    🔵 LOW      : 2
     ✅ INFO     : 8
-    Total      : 15 findings
+    Total      : 19 findings
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ DATA TYPES (1 critical, 3 warnings, 2 info) ━━━
@@ -86,9 +78,11 @@ and collapsible `<details>` sections for large finding groups.
 | Level | Count |
 |-------|-------|
 | ❌ Critical | **2** |
-| ⚠️ Warning | **5** |
+| 🔴 High | **3** |
+| 🟡 Medium | **4** |
+| 🔵 Low | **2** |
 | ✅ Info | 8 |
-| **Total** | **15** |
+| **Total** | **19** |
 
 ## Data Types — ❌ 1 critical
 
@@ -122,7 +116,7 @@ Self-contained HTML page (no external dependencies) styled with the
 **Fabric blue** (`#0078d4`) design language. Features:
 
 - **Summary cards** — grid of Warehouse, Edition, Tables, Columns
-- **Severity cards** — colour-coded Critical / Warning / Info / Total
+- **Severity cards** — colour-coded Critical / High / Medium / Low / Info / Total
 - **Category sections** — each with a severity badge bar
 - **Finding tables** — one row per finding with Level, Object, Finding,
   Recommendation columns
@@ -135,19 +129,20 @@ Self-contained HTML page (no external dependencies) styled with the
 |---------|-------|
 | Header | Fabric blue `#0078d4` underline |
 | Critical badge | Red `#d32f2f` pill |
-| Warning badge | Amber `#f57c00` pill |
+| High badge | Orange-red `#e65100` pill |
+| Medium badge | Amber `#f57c00` pill |
+| Low badge | Blue `#1565c0` pill |
 | Info badge | Green `#388e3c` pill |
 | Finding rows | Left border colour matches severity |
 | SQL blocks | Dark background, `Cascadia Code` font |
 | Cards | White with subtle box shadow |
 
-### Opening in a Browser
+### Displaying the results
 
 ```python
-result.save("output")
 
-import webbrowser, os
-webbrowser.open(os.path.abspath("output/report.html"))
+displayHTML(result.html_report)
+
 ```
 
 ---
@@ -169,7 +164,9 @@ data_type_issues = [f for f in result.findings if f.category == "data_types"]
 
 # Summary counts
 print(f"Critical: {result.critical_count}")
-print(f"Warning:  {result.warning_count}")
+print(f"High:     {result.high_count}")
+print(f"Medium:   {result.medium_count}")
+print(f"Low:      {result.low_count}")
 print(f"Info:     {result.info_count}")
 ```
 

@@ -201,8 +201,7 @@ reasonably have V-Order disabled.  The common pattern:
 | Config toggle | `check_statistics` |
 | Applies to | DataWarehouse, LakeWarehouse |
 
-Analyses the health of query optimizer statistics using `sys.stats`,
-`sys.partitions`, `STATS_DATE()`, and `DBCC SHOW_STATISTICS`.
+Analyses the health of query optimizer statistics using `sys.stats`, `STATS_DATE()`, and `DBCC SHOW_STATISTICS`.
 
 ### Full Check List
 
@@ -237,9 +236,7 @@ FROM sys.databases WHERE database_id = DB_ID()
 **Per-table staleness** — iterates all statistics from `sys.stats` and
 checks `STATS_DATE()` against the configured threshold.
 
-**Row count drift** — compares `sys.partitions` actual row count to the
-estimate from `DBCC SHOW_STATISTICS ... WITH STAT_HEADER`.  A large
-drift means the optimizer is working with outdated cardinality estimates.
+**Row count drift** — compares `COUNT_BIG(*) result which Fabric resolves from columnstore` actual row count to the estimate from `DBCC SHOW_STATISTICS ... WITH STAT_HEADER`. A large drift means the optimizer is working with outdated cardinality estimates.
 
 ### SQL Fixes
 
@@ -315,5 +312,7 @@ exceeding the warning threshold are flagged.
 | Level | Icon | Meaning | Action |
 |-------|------|---------|--------|
 | CRITICAL | ❌ | Significant performance impact or irreversible misconfiguration | Fix immediately |
-| WARNING | ⚠️ | Sub-optimal setting that degrades performance | Fix during next maintenance window |
+| HIGH | 🔴 | Important issue likely to affect performance at scale | Plan a fix soon |
+| MEDIUM | 🟡 | Sub-optimal setting that may degrade performance under load | Fix during next maintenance window |
+| LOW | 🔵 | Minor improvement opportunity with marginal benefit | Address when convenient |
 | INFO | ✅ | Healthy configuration or informational note | No action required |
