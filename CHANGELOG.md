@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This file is automatically updated by the release workflow.
 
+## [v1.0.7](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.7)
+
+- Bump version to 1.0.7 in pyproject.toml
+- Update installation instructions to remove version pinning and correct project URLs
+
 ## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
 
 - Merge pull request #12 from tiagobalabuch/refactoring/class-names
@@ -62,6 +67,11 @@ This file is automatically updated by the release workflow.
 - Merge pull request #1 from tiagobalabuch/docs-and-release-workflow
 - Add in-repo documentation and GitHub Actions release workflow
 - Initial commit: Fabric Warehouse Data Clustering Advisor v0.2.0
+
+## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
+
+- Bump version to 1.0.6 in pyproject.toml
+- Update installation instructions to remove version pinning and correct project URLs
 
 ## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
 
