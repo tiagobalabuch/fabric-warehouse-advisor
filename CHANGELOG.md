@@ -7,6 +7,9 @@ This file is automatically updated by the release workflow.
 
 - Bump version to 1.0.7 in pyproject.toml
 - Update installation instructions to remove version pinning and correct project URLs
+
+## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
+
 - Merge pull request #12 from tiagobalabuch/refactoring/class-names
 - Merge pull request #11 from tiagobalabuch/changelog/v1.0.3
 - Refactor documentation: update section headings for clarity and consistency
@@ -67,7 +70,7 @@ This file is automatically updated by the release workflow.
 
 ## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
 
-- Bump version to 1.0.7 in pyproject.toml
+- Bump version to 1.0.6 in pyproject.toml
 - Update installation instructions to remove version pinning and correct project URLs
 
 ## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
