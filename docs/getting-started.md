@@ -13,7 +13,7 @@ and running your first analysis.
 | **Same tenant** | The target Warehouse / SQL Endpoint must be in the same Fabric tenant |
 | **Python 3.9+** | Only needed if building from source (not required on Fabric) |
 
-!!! note "Prerequisite Note" 
+!!! note "Prerequisite Note"
     A Lakehouse is only required if you plan to upload the `.whl` file to the Lakehouse Files section.
     The Microsoft Fabric Data Warehouse connector is pre-installed in the
     Fabric Spark runtime, and Query Insights is enabled by default on every Fabric Warehouse.

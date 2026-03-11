@@ -15,8 +15,8 @@ the same information — choose whichever fits your workflow.
 
 ### Text Report
 
-The text report is **automatically printed** at the end of `advisor.run()`.
-To print it again:
+The text report is not automatically printed at the end of `advisor.run()`.
+To print it:
 
 ```python
 print(result.text_report)

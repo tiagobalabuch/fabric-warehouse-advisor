@@ -11,7 +11,7 @@ mismatches, and query regressions.
 ┌────────────────────────────────────────────────────────────────┐
 │                     Fabric Notebook                            │
 │                                                                │
-│  │                                                             │
+│  │  PerformanceCheckAdvisor.run()                              │
 │  ├─ Phase 0: Edition Detection   → DATABASEPROPERTYEX()        │
 │  ├─ Phase 1: Data Types          → INFORMATION_SCHEMA.COLUMNS  │
 │  ├─ Phase 2: Caching             → sys.databases, queryinsights│

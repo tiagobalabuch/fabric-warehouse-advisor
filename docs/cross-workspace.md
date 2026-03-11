@@ -19,7 +19,7 @@ https://app.fabric.microsoft.com/groups/{WorkspaceID}/warehouses/{WarehouseID}
 | `warehouse_id` | The GUID after `/warehouses/` in the URL when the warehouse is open |
 | `sql_endpoint_id` | The GUID after `/mirroredwarehouses/` in the URL when the SQL Analytics Endpoint is open |
 
-!!! tip "sql_endpoint_id is optional"
+!!! tip "Choose warehouse_id or sql_endpoint_id"
     You must specify either warehouse_id or sql_endpoint_id, depending on where you want the advisor to run. Use `warehouse_id` to run the advisor against a **Warehouse**. Use `sql_endpoint_id` to run the advisor against a **SQL Analytics Endpoint**
 
 ## Configuration

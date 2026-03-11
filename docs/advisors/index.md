@@ -11,18 +11,16 @@ its own reports.
 | **Purpose** | Recommend optimal `CLUSTER BY` columns | Detect performance anti-patterns |
 | **Output model** | Scored recommendations (0–100) | Findings (Critical / High / Medium / Low / Info) |
 | **Applies to** | DataWarehouse only | DataWarehouse and Lakehouse SQL Endpoints |
-| **Phases** | 7 (metadata → scoring) | 5 (edition → statistics) |
 | **Config class** | `DataClusteringAdvisorConfig` | `PerformanceCheckConfig` |
 | **Result class** | `AdvisorResult` | `PerformanceCheckResult` |
 | **Reports** | Text, Markdown, HTML | Text, Markdown, HTML |
 | **DDL generation** | Yes (CTAS statements) | Yes (per-finding SQL fixes) |
-
 | **Phases** | 7 (metadata → scoring) | 7 (edition → statistics) |
 
-Analyses your **actual query patterns** (via Query Insights), combines
-them with **table metadata** and **column cardinality estimates**, and
-scores every candidate column from 0 to 100. You get a clear report
-telling you exactly what to cluster and why.
+
+## Data Clustering Advisor
+    
+Analyses your **actual query patterns** (via Query Insights), combines them with **table metadata** and **column cardinality estimates**, and scores every candidate column from 0 to 100. You get a clear report telling you exactly what to cluster and why.
 
 ```python
 from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
@@ -36,12 +34,10 @@ displayHTML(result.html_report)
 
 ## Performance Check Advisor
 
-Scans for common performance pitfalls across **different categories**: warehouse
-edition detection, data-type anti-patterns, caching configuration,
-collation settings, query regression, and statistics health, V-Order optimization
-state. Not all checks apply to every edition — V-Order checks run only on
-**Warehouse**, while checks like data-type anti-patterns and statistics
-health apply to both **Warehouse** and **SQL Analytics Endpoints**.
+Scans for common performance pitfalls across multiple categories, including warehouse edition detection, data‑type anti‑patterns, caching configuration, collation settings, query regression, statistics health, and V‑Order optimization state.
+
+!!! info "Checking Warehouse edition"
+    Not all checks apply to every warehouse edition.
 
 ```python
 from fabric_warehouse_advisor import PerformanceCheckAdvisor, PerformanceCheckConfig
