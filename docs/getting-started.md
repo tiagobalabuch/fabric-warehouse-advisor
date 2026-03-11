@@ -60,7 +60,7 @@ Run PIP install
 %pip install fabric-warehouse-advisor==1.0.3
 ```
 
-### Option B: Per-Notebook Install (Recommended)
+### Option B: Per-Notebook Install
 
 1. Upload the `.whl` file to your Lakehouse **Files** area (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse#upload-files) for detailed upload instructions).
 2. In the first cell of your notebook, run:

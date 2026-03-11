@@ -72,7 +72,7 @@ result = advisor.run()
 displayHTML(result.html_report)
 ```
 
-### "Performance Check"
+### Performance Check
 
 ```python
 from fabric_warehouse_advisor import PerformanceCheckAdvisor, PerformanceCheckConfig
