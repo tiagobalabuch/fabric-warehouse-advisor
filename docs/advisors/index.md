@@ -11,8 +11,8 @@ its own reports.
 | **Purpose** | Recommend optimal `CLUSTER BY` columns | Detect performance anti-patterns |
 | **Output model** | Scored recommendations (0–100) | Findings (Critical / High / Medium / Low / Info) |
 | **Applies to** | DataWarehouse only | DataWarehouse and Lakehouse SQL Endpoints |
-| **Config class** | `DataClusteringAdvisorConfig` | `PerformanceCheckConfig` |
-| **Result class** | `AdvisorResult` | `PerformanceCheckResult` |
+| **Config class** | `DataClusteringConfig` | `PerformanceCheckConfig` |
+| **Result class** | `DataClusteringResult` | `PerformanceCheckResult` |
 | **Reports** | Text, Markdown, HTML | Text, Markdown, HTML |
 | **DDL generation** | Yes (CTAS statements) | Yes (per-finding SQL fixes) |
 | **Phases** | 7 (metadata → scoring) | 7 (edition → statistics) |
@@ -23,9 +23,9 @@ its own reports.
 Analyses your **actual query patterns** (via Query Insights), combines them with **table metadata** and **column cardinality estimates**, and scores every candidate column from 0 to 100. You get a clear report telling you exactly what to cluster and why.
 
 ```python
-from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-config = DataClusteringAdvisorConfig(warehouse_name="MyWarehouse")
+config = DataClusteringConfig(warehouse_name="MyWarehouse")
 result = DataClusteringAdvisor(spark, config).run()
 displayHTML(result.html_report)
 ```
@@ -56,7 +56,7 @@ in the same notebook:
 
 ```python
 from fabric_warehouse_advisor import (
-    DataClusteringAdvisor, DataClusteringAdvisorConfig,
+    DataClusteringAdvisor, DataClusteringConfig,
     PerformanceCheckAdvisor, PerformanceCheckConfig,
 )
 
@@ -67,7 +67,7 @@ pc_result = PerformanceCheckAdvisor(spark, PerformanceCheckConfig(
     warehouse_name=warehouse,
 )).run()
 
-dc_result = DataClusteringAdvisor(spark, DataClusteringAdvisorConfig(
+dc_result = DataClusteringAdvisor(spark, DataClusteringConfig(
     warehouse_name=warehouse,
 )).run()
 

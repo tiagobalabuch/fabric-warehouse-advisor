@@ -51,7 +51,7 @@ print(result.markdown_report)
 Use the `result.save()` method or the standalone `save_report()` function:
 
 ```python
-# Via AdvisorResult
+# Via PerformanceCheckResult
 result.save("/lakehouse/default/Files/reports/report.html")           # HTML (default)
 result.save("/lakehouse/default/Files/reports/report.md", "md")       # Markdown
 result.save("/lakehouse/default/Files/reports/report.txt", "txt")     # Plain text

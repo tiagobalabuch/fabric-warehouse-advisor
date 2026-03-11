@@ -18,9 +18,9 @@ telling you exactly what to cluster and why.
 ## Quick Start
 
 ```python
-from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
 )
 

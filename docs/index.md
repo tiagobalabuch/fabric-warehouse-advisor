@@ -30,12 +30,12 @@ Everything runs inside a **Fabric Notebook** — no external tools, no data leav
 
 ```python
 from fabric_warehouse_advisor import (
-    DataClusteringAdvisor, DataClusteringAdvisorConfig,
+    DataClusteringAdvisor, DataClusteringConfig,
     PerformanceCheckAdvisor, PerformanceCheckConfig,
 )
 
 # --- Data Clustering ---
-dc_config = DataClusteringAdvisorConfig(warehouse_name="MyWarehouse")
+dc_config = DataClusteringConfig(warehouse_name="MyWarehouse")
 dc_result = DataClusteringAdvisor(spark, dc_config).run()
 displayHTML(dc_result.html_report)
 

@@ -2,7 +2,7 @@
 Fabric Warehouse Advisor — Data Clustering Configuration
 =========================================================
 All configuration values are exposed as fields of the
-``DataClusteringAdvisorConfig`` dataclass with sensible defaults.
+``DataClusteringConfig`` dataclass with sensible defaults.
 
 Users create a config instance, override what they need, and pass
 it to :class:`DataClusteringAdvisor`.
@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class DataClusteringAdvisorConfig:
+class DataClusteringConfig:
     """Configuration for the Data Clustering Advisor.
 
     Every public constant that was previously in the flat ``config.py``

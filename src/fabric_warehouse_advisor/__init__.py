@@ -13,9 +13,9 @@ Available Advisors
 
 Quick start::
 
-    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-    config = DataClusteringAdvisorConfig(warehouse_name="MyWarehouse")
+    config = DataClusteringConfig(warehouse_name="MyWarehouse")
     advisor = DataClusteringAdvisor(spark, config)
     result = advisor.run()
 
@@ -47,8 +47,8 @@ from .core.report import save_report
 # ── Data Clustering Advisor ────────────────────────────────────────
 from .advisors.data_clustering import (
     DataClusteringAdvisor,
-    DataClusteringAdvisorConfig,
-    AdvisorResult,
+    DataClusteringConfig,
+    DataClusteringResult,
     ColumnScore,
     TableRecommendation,
     DataTypeAssessment,
@@ -91,8 +91,8 @@ __all__ = [
     "save_report",
     # Data Clustering Advisor
     "DataClusteringAdvisor",
-    "DataClusteringAdvisorConfig",
-    "AdvisorResult",
+    "DataClusteringConfig",
+    "DataClusteringResult",
     "ColumnScore",
     "TableRecommendation",
     "DataTypeAssessment",

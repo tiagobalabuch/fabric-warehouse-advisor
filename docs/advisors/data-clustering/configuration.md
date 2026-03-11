@@ -1,13 +1,13 @@
 # Configuration Reference
 
-All parameters are fields of the `DataClusteringAdvisorConfig` dataclass.
+All parameters are fields of the `DataClusteringConfig` dataclass.
 Create an instance, override the defaults you need, and pass it to
 `DataClusteringAdvisor`.
 
 ```python
-from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
     min_row_count=500_000,
     verbose=True,
@@ -91,13 +91,13 @@ Examples:
 
 ```python
 # Analyse only these two tables
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
     table_names=["dbo.Orders", "FactSales"],
 )
 
 # Analyse only tables in the 'sales' schema (by listing them explicitly)
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
     table_names=["sales.FactOrders", "sales.FactReturns", "sales.FactLineItems"],
 )

@@ -59,9 +59,9 @@ See [Getting Started](docs/getting-started.md) for detailed instructions.
 ### Data Clustering
 
 ```python
-from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
 )
 
@@ -137,7 +137,7 @@ src/fabric_warehouse_advisor/
     ├── __init__.py
     ├── data_clustering/
     │   ├── __init__.py                # Data Clustering Advisor exports
-    │   ├── config.py                  # DataClusteringAdvisorConfig dataclass
+    │   ├── config.py                  # DataClusteringConfig dataclass
     │   ├── advisor.py                 # DataClusteringAdvisor orchestrator
     │   ├── data_type_support.py       # Data-type eligibility rules
     │   ├── scoring.py                 # Composite scoring + DDL generation

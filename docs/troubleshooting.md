@@ -48,7 +48,7 @@ PySpark.
 **Solution:**
 
 ```python
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",  # Required — must match exactly
 )
 ```
@@ -67,7 +67,7 @@ config = DataClusteringAdvisorConfig(
 
 1. **All tables are below `min_row_count`** — Lower the threshold:
    ```python
-   config = DataClusteringAdvisorConfig(
+   config = DataClusteringConfig(
        warehouse_name="MyWarehouse",
        min_row_count=100_000,  # default is 1,000,000
    )
@@ -127,7 +127,7 @@ server-side via T-SQL. If it's slow:
 
 1. **Too many tables** — Use `table_names` to scope the analysis:
    ```python
-   config = DataClusteringAdvisorConfig(
+   config = DataClusteringConfig(
        warehouse_name="MyWarehouse",
        table_names=["dbo.FactSales", "dbo.FactOrders"],
    )
@@ -148,7 +148,7 @@ Enable verbose mode to see exactly what the advisor is doing at each
 phase:
 
 ```python
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
     verbose=True,
 )

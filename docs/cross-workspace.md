@@ -29,9 +29,9 @@ Both advisors accept the same cross-workspace parameters.
 === "Data Clustering"
 
     ```python
-    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-    config = DataClusteringAdvisorConfig(
+    config = DataClusteringConfig(
         warehouse_name="TargetWarehouse",
 
         # Cross-workspace: both are required together
@@ -88,7 +88,7 @@ the Fabric Spark runtime's built-in connector.
 When running in the same workspace, simply omit both parameters:
 
 ```python
-config = DataClusteringAdvisorConfig(
+config = DataClusteringConfig(
     warehouse_name="MyWarehouse",
     # No workspace_id or warehouse_id needed
 )

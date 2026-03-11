@@ -9,9 +9,9 @@ Usage
 -----
 ::
 
-    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringAdvisorConfig
+    from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
-    config = DataClusteringAdvisorConfig(warehouse_name="MyWarehouse")
+    config = DataClusteringConfig(warehouse_name="MyWarehouse")
     advisor = DataClusteringAdvisor(spark, config)
     result = advisor.run()
 
@@ -30,7 +30,7 @@ from typing import Dict, List, Optional, Tuple
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from .config import DataClusteringAdvisorConfig
+from .config import DataClusteringConfig
 from ...core.warehouse_reader import (
     get_full_column_metadata,
     get_current_clustering_config,
@@ -79,7 +79,7 @@ def _display(df: DataFrame) -> None:  # type: ignore[type-arg]
 # ------------------------------------------------------------------
 
 @dataclass
-class AdvisorResult:
+class DataClusteringResult:
     """Container for all outputs produced by a single advisor run."""
 
     #: Per-column scores (Python list).
@@ -143,7 +143,7 @@ class DataClusteringAdvisor:
     ----------
     spark : SparkSession
         An active PySpark session (Fabric Spark provides one by default).
-    config : DataClusteringAdvisorConfig
+    config : DataClusteringConfig
         Configuration object.  Create one and override any defaults you
         need before passing it in.
     """
@@ -151,10 +151,10 @@ class DataClusteringAdvisor:
     def __init__(
         self,
         spark: SparkSession,
-        config: DataClusteringAdvisorConfig | None = None,
+        config: DataClusteringConfig | None = None,
     ) -> None:
         self.spark = spark
-        self.config = config or DataClusteringAdvisorConfig()
+        self.config = config or DataClusteringConfig()
 
     # ---- convenience helpers ----
 
@@ -212,8 +212,8 @@ class DataClusteringAdvisor:
 
     # ---- public API ----
 
-    def run(self) -> AdvisorResult:
-        """Execute the full 7-phase analysis and return an :class:`AdvisorResult`.
+    def run(self) -> DataClusteringResult:
+        """Execute the full 7-phase analysis and return a :class:`DataClusteringResult`.
 
         Raises
         ------
@@ -694,7 +694,7 @@ class DataClusteringAdvisor:
         print("  Use  displayHTML(result.html_report)  for a rich HTML view.")
         print("  Use  result.save('path.html')  to save the report to a file.")
 
-        return AdvisorResult(
+        return DataClusteringResult(
             all_scores=all_scores,
             recommendations=table_recommendations,
             scores_df=scores_df,

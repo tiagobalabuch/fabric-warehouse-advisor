@@ -155,7 +155,7 @@ Phase 2 (clustering) ────────────┤
 Phase 3 (row counts) ────────────┼──► Phase 7 (scoring)
 Phase 4 (queries) ──► Phase 5 ───┤        │
 Phase 6 (cardinality) ───────────┘        ▼
-                                    AdvisorResult
+                                    DataClusteringResult
                                     ├── all_scores
                                     ├── recommendations
                                     ├── scores_df
