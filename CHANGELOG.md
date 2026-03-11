@@ -3,8 +3,14 @@
 All notable changes to this project will be documented in this file.
 This file is automatically updated by the release workflow.
 
-## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
+## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
 
+- Merge pull request #12 from tiagobalabuch/refactoring/class-names
+- Merge pull request #11 from tiagobalabuch/changelog/v1.0.3
+- Refactor documentation: update section headings for clarity and consistency
+- Refactor Data Clustering Advisor: rename configuration classes and update documentation references. Bump version to 1.0.6
+- Update installation instructions in README and getting-started documentation: clarify PyPI installation and reorganize options
+- Update CHANGELOG.md for v1.0.3
 - Merge pull request #10 from tiagobalabuch/bug/smalfix
 - Bump version to 1.0.3 in pyproject.toml
 - Refactor Performance Check Advisor code: clarify data type checks, remove NVARCHAR warnings, and enhance warehouse edition detection logic. Reflected the changes in the documentation
@@ -56,6 +62,15 @@ This file is automatically updated by the release workflow.
 - Merge pull request #1 from tiagobalabuch/docs-and-release-workflow
 - Add in-repo documentation and GitHub Actions release workflow
 - Initial commit: Fabric Warehouse Data Clustering Advisor v0.2.0
+
+## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
+
+- Merge pull request #12 from tiagobalabuch/refactoring/class-names
+- Merge pull request #11 from tiagobalabuch/changelog/v1.0.3
+- Refactor documentation: update section headings for clarity and consistency
+- Refactor Data Clustering Advisor: rename configuration classes and update documentation references. Bump version to 1.0.6
+- Update installation instructions in README and getting-started documentation: clarify PyPI installation and reorganize options
+- Update CHANGELOG.md for v1.0.3
 
 ## [v1.0.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.0)
 
