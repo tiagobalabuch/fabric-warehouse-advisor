@@ -37,8 +37,8 @@ python -m build
 
 This produces two files in `dist/`:
 
-- `fabric_warehouse_advisor-1.0.0-py3-none-any.whl` — the installable wheel
-- `fabric_warehouse_advisor-1.0.0.tar.gz` — source distribution
+- `fabric_warehouse_advisor-1.0.3-py3-none-any.whl` — the installable wheel
+- `fabric_warehouse_advisor-1.0.3.tar.gz` — source distribution
 
 You only need the `.whl` file for Fabric.
 
@@ -50,7 +50,7 @@ You only need the `.whl` file for Fabric.
 2. In the first cell of your notebook, run:
 
 ```python
-%pip install /lakehouse/default/Files/fabric_warehouse_advisor-1.0.0-py3-none-any.whl
+%pip install /lakehouse/default/Files/fabric_warehouse_advisor-1.0.3-py3-none-any.whl
 ```
 
 This is the quickest way to get up and running.
