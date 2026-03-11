@@ -64,11 +64,7 @@ class PerformanceCheckConfig:
         Flags columns whose collation differs from the database default.
 
     varchar_max_warning : bool
-        Flag ``VARCHAR(MAX)`` and ``NVARCHAR(MAX)`` columns.
-
-    nvarchar_to_varchar_warning : bool
-        Flag ``NVARCHAR`` columns that could potentially be ``VARCHAR``
-        (Unicode overhead when not needed).
+        Flag ``VARCHAR(MAX)`` columns.
 
     char_to_varchar_warning : bool
         Flag ``CHAR(n)`` columns where ``VARCHAR(n)`` may be better.
@@ -77,8 +73,8 @@ class PerformanceCheckConfig:
         Flag nullable columns that could potentially be ``NOT NULL``.
 
     oversized_varchar_threshold : int
-        Flag ``VARCHAR(n)`` / ``NVARCHAR(n)`` columns with max_length
-        at or above this value.
+        Flag ``VARCHAR(n)`` columns with max_length at or above this
+        value.
 
     decimal_over_precision_threshold : int
         Flag ``DECIMAL`` / ``NUMERIC`` columns with precision above
@@ -118,10 +114,6 @@ class PerformanceCheckConfig:
 
     proactive_refresh_check : bool
         Check if proactive statistics refresh is enabled.
-
-    orphaned_stats_check : bool
-        Check for statistics on columns that may no longer exist or
-        on tables with significantly changed schemas.
 
     tables_without_stats_check : bool
         Check for large tables that have no user or auto statistics.
@@ -177,7 +169,6 @@ class PerformanceCheckConfig:
 
     # -- Data Type thresholds --
     varchar_max_warning: bool = True
-    nvarchar_to_varchar_warning: bool = True
     char_to_varchar_warning: bool = True
     nullable_warning: bool = True
     oversized_varchar_threshold: int = 8000
@@ -196,7 +187,6 @@ class PerformanceCheckConfig:
     stale_stats_threshold_days: int = 7
     row_drift_pct_threshold: float = 20.0
     proactive_refresh_check: bool = True
-    orphaned_stats_check: bool = True
     tables_without_stats_check: bool = True
 
     # -- V-Order settings --

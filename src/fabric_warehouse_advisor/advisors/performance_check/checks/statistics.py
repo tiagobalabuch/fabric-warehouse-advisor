@@ -10,7 +10,6 @@ Checks
 * Stale statistics (older than threshold)
 * Row count drift (actual vs. statistics estimate)
 * Tables with no statistics at all
-* Orphaned / non-actionable statistics objects
 """
 
 from __future__ import annotations

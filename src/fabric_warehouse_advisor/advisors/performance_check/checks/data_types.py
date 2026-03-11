@@ -6,9 +6,8 @@ in Fabric Warehouse's columnar Delta Parquet storage engine.
 
 Checks
 ------
-* ``VARCHAR(MAX)`` / ``NVARCHAR(MAX)`` usage (memory spill risk)
+* ``VARCHAR(MAX)`` usage (memory spill risk)
 * ``CHAR(n)`` where ``VARCHAR(n)`` would be more efficient
-* ``NVARCHAR`` where ``VARCHAR`` might suffice
 * Oversized ``VARCHAR(n)`` declarations (≥ threshold)
 * ``DECIMAL`` / ``NUMERIC`` with excessive precision
 * ``FLOAT`` / ``REAL`` on monetary-sounding columns
@@ -148,8 +147,8 @@ def check_data_types(
         rc = row_counts.get((schema, table), 0) if row_counts else 0
         size_note = f" ({rc:,} rows)" if rc > 0 else ""
 
-        # --- VARCHAR(MAX) / NVARCHAR(MAX) ---
-        if config.varchar_max_warning and data_type in ("varchar", "nvarchar") and max_length == -1:
+        # --- VARCHAR(MAX) ---
+        if config.varchar_max_warning and data_type == "varchar" and max_length == -1:
             findings.append(Finding(
                 level=LEVEL_CRITICAL,
                 category=CATEGORY_DATA_TYPES,
@@ -174,8 +173,8 @@ def check_data_types(
                 ),
             ))
 
-        # --- Oversized VARCHAR/NVARCHAR ---
-        elif (data_type in ("varchar", "nvarchar")
+        # --- Oversized VARCHAR ---
+        elif (data_type == "varchar"
               and max_length is not None
               and max_length >= config.oversized_varchar_threshold
               and max_length != -1):
@@ -223,25 +222,6 @@ def check_data_types(
                 sql_fix=(
                     f"ALTER TABLE [{schema}].[{table}] "
                     f"ALTER COLUMN [{column}] VARCHAR({max_length});"
-                ),
-            ))
-
-        # --- NVARCHAR vs VARCHAR ---
-        if config.nvarchar_to_varchar_warning and data_type == "nvarchar" and max_length != -1:
-            findings.append(Finding(
-                level=LEVEL_LOW,
-                category=CATEGORY_DATA_TYPES,
-                check_name="nvarchar_review_needed",
-                object_name=fqn,
-                message=f"NVARCHAR({max_length}) — verify Unicode is required.",
-                detail=(
-                    f"Data type: NVARCHAR({max_length}){size_note}. "
-                    f"NVARCHAR uses 2 bytes per character vs 1 byte for VARCHAR. "
-                    f"If the data is ASCII-only, VARCHAR halves the storage."
-                ),
-                recommendation=(
-                    f"If Unicode support is not needed, consider "
-                    f"VARCHAR({max_length}) to reduce storage and improve I/O."
                 ),
             ))
 
@@ -315,7 +295,7 @@ def check_data_types(
 
         # --- Date stored as string ---
         if (config.datetime_as_string_warning
-            and data_type in ("varchar", "nvarchar", "char")
+            and data_type in ("varchar", "char")
             and max_length != -1
             and _DATE_NAME_PATTERN.search(column)):
             findings.append(Finding(

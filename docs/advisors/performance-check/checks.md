@@ -47,10 +47,9 @@ that hurt performance in Fabric's columnar Delta Parquet engine.
 
 | Check Name | Level | What It Detects | Why It Matters |
 |-----------|-------|-----------------|----------------|
-| `varchar_max_detected` | CRITICAL | `VARCHAR(MAX)` or `NVARCHAR(MAX)` | Engine allocates maximum memory during sort/hash, causing spills. Disqualifies queries from result set caching. |
-| `oversized_varchar` | WARNING | `VARCHAR(n)` or `NVARCHAR(n)` at or above `oversized_varchar_threshold` (default 8 000) | Inflated cost estimates; statistics less accurate when declared length far exceeds actual data. |
+| `varchar_max_detected` | CRITICAL | `VARCHAR(MAX)` | Engine allocates maximum memory during sort/hash, causing spills. Disqualifies queries from result set caching. |
+| `oversized_varchar` | WARNING | `VARCHAR(n)` at or above `oversized_varchar_threshold` (default 8 000) | Inflated cost estimates; statistics less accurate when declared length far exceeds actual data. |
 | `char_used_instead_of_varchar` | WARNING | `CHAR(n)` columns | Fixed-length padding wastes space when actual values are shorter than `n`. |
-| `nvarchar_review_needed` | INFO | `NVARCHAR(n)` columns | 2 bytes per character vs 1 byte for `VARCHAR`. If data is ASCII-only, `VARCHAR` halves storage. |
 | `decimal_over_precision` | WARNING | `DECIMAL` / `NUMERIC` with precision above `decimal_over_precision_threshold` (default 18) | Over-provisioned precision increases per-row storage cost. |
 | `float_for_monetary_data` | WARNING | `FLOAT` / `REAL` on columns whose name matches a monetary pattern | Approximate types introduce rounding errors in financial calculations. |
 | `bigint_for_small_range` | INFO | `BIGINT` on columns whose name suggests small-range values (year, month, qty, …) | `INT` (4 bytes) or `SMALLINT` (2 bytes) would be sufficient. |
@@ -86,7 +85,7 @@ all available parameters.
      SELECT MAX(LEN([Description])) FROM [dbo].[FactSales]
 
 ⚠️ [dbo].[DimCustomer].[FullName]
-   NVARCHAR(4000) is excessively large.
+   VARCHAR(4000) is excessively large.
    → Check actual max length and resize.
 ```
 

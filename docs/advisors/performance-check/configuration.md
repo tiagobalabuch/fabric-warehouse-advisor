@@ -83,11 +83,10 @@ Fine-grained control over which data-type patterns are flagged:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `varchar_max_warning` | `bool` | `True` | Flag `VARCHAR(MAX)` and `NVARCHAR(MAX)` columns. |
-| `nvarchar_to_varchar_warning` | `bool` | `True` | Flag `NVARCHAR` columns that could potentially be `VARCHAR`. |
+| `varchar_max_warning` | `bool` | `True` | Flag `VARCHAR(MAX)` columns. |
 | `char_to_varchar_warning` | `bool` | `True` | Flag `CHAR(n)` columns where `VARCHAR(n)` may be better. |
 | `nullable_warning` | `bool` | `True` | Flag nullable columns that could be `NOT NULL`. |
-| `oversized_varchar_threshold` | `int` | `8000` | Flag `VARCHAR(n)` / `NVARCHAR(n)` at or above this length. |
+| `oversized_varchar_threshold` | `int` | `8000` | Flag `VARCHAR(n)` at or above this length. |
 | `decimal_over_precision_threshold` | `int` | `18` | Flag `DECIMAL` / `NUMERIC` with precision above this value. |
 | `datetime_as_string_warning` | `bool` | `True` | Flag string columns whose names suggest date/time data. |
 | `float_for_money_warning` | `bool` | `True` | Flag `FLOAT` / `REAL` on monetary-sounding columns. |
@@ -101,7 +100,6 @@ config = PerformanceCheckConfig(
     varchar_max_warning=True,       # CRITICAL: keep on
     char_to_varchar_warning=False,  # suppress CHAR warnings
     nullable_warning=False,         # suppress nullable INFO
-    nvarchar_to_varchar_warning=False,
 )
 ```
 
@@ -121,7 +119,6 @@ config = PerformanceCheckConfig(
 | `stale_stats_threshold_days` | `int` | `7` | Warn if statistics are older than this many days. |
 | `row_drift_pct_threshold` | `float` | `20.0` | Warn if actual row count differs from stats estimate by more than this %. |
 | `proactive_refresh_check` | `bool` | `True` | Check if proactive statistics refresh is enabled. |
-| `orphaned_stats_check` | `bool` | `True` | Check for orphaned statistics objects. |
 | `tables_without_stats_check` | `bool` | `True` | Check for tables that have no statistics at all. |
 
 ## Query Regression Settings

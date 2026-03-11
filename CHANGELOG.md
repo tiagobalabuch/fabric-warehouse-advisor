@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This file is automatically updated by the release workflow.
 
+## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
+
+- Bump version to 1.0.3
+- Remove NVARCHAR-related checks (NVARCHAR is unsupported in Fabric Data Warehouse)
+- Remove dead `orphaned_stats_check` code
+- Add Phase 0 edition gate to Data Clustering Advisor
+- Rename timing variables for readability
+
 ## [v1.0.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.0)
 
 - Merge pull request #7 from tiagobalabuch/feature/performance-advisor

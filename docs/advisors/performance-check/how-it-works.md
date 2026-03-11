@@ -49,15 +49,14 @@ to scan every column in user tables for data-type anti-patterns.
 This phase uses a single T-SQL query that returns all column metadata,
 then applies 9 configurable heuristic checks locally:
 
-1. `VARCHAR(MAX)` / `NVARCHAR(MAX)` → **CRITICAL**
-2. Oversized `VARCHAR(n)` / `NVARCHAR(n)` → WARNING
+1. `VARCHAR(MAX)` → **CRITICAL**
+2. Oversized `VARCHAR(n)` → WARNING
 3. `CHAR(n)` where `VARCHAR(n)` is better → WARNING
-4. `NVARCHAR` where `VARCHAR` might suffice → INFO
-5. `DECIMAL` / `NUMERIC` with excessive precision → WARNING
-6. `FLOAT` / `REAL` on monetary-sounding columns → WARNING
-7. `BIGINT` for small-range values → INFO
-8. Date/time data stored as strings → WARNING
-9. Nullable columns that should be `NOT NULL` → INFO
+4. `DECIMAL` / `NUMERIC` with excessive precision → WARNING
+5. `FLOAT` / `REAL` on monetary-sounding columns → WARNING
+6. `BIGINT` for small-range values → INFO
+7. Date/time data stored as strings → WARNING
+8. Nullable columns that should be `NOT NULL` → INFO
 
 Column names are matched against regex patterns to detect semantic
 mismatches (e.g., a `FLOAT` column named `total_amount`).
