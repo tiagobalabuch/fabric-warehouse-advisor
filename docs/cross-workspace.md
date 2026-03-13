@@ -24,7 +24,7 @@ https://app.fabric.microsoft.com/groups/{WorkspaceID}/warehouses/{WarehouseID}
 
 ## Configuration
 
-Both advisors accept the same cross-workspace parameters.
+All advisors accept the same cross-workspace parameters.
 
 === "Data Clustering"
 
@@ -59,6 +59,23 @@ Both advisors accept the same cross-workspace parameters.
     )
 
     advisor = PerformanceCheckAdvisor(spark, config)
+    result = advisor.run()
+    ```
+
+=== "Security Check"
+
+    ```python
+    from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
+
+    config = SecurityCheckConfig(
+        warehouse_name="TargetWarehouse",
+
+        # Cross-workspace: both are required together
+        workspace_id="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        warehouse_id="yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    )
+
+    advisor = SecurityCheckAdvisor(spark, config)
     result = advisor.run()
     ```
 

@@ -10,6 +10,8 @@ produces scored recommendations with rich reports.
   Data Clustering (scored 0–100).
 * **Performance Check Advisor** — scans for data-type anti-patterns, caching
   misconfigurations, stale statistics, and V-Order issues (findings-based).
+* **Security Check Advisor** — analyses permissions, roles, RLS, CLS, and
+  Dynamic Data Masking configuration (findings-based).
 
 It runs entirely inside a **Fabric Notebook**. The Microsoft Fabric Data Warehouse connector comes pre-installed in the Fabric runtime, and Query Insights is enabled by default on every warehouse. A Lakehouse is required only when the solution is installed from a wheel file stored in OneLake.
 
@@ -87,6 +89,21 @@ result = advisor.run()
 displayHTML(result.html_report)
 ```
 
+### Security Check
+
+```python
+from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
+
+config = SecurityCheckConfig(
+    warehouse_name="MyWarehouse",
+)
+
+advisor = SecurityCheckAdvisor(spark, config)
+result = advisor.run()
+
+displayHTML(result.html_report)
+```
+
 ## How It Works
 
 The advisor runs **7 phases** — all using T-SQL passthrough (no data
@@ -119,6 +136,11 @@ transferred to Spark):
 | [PC — Configuration](docs/advisors/performance-check/configuration.md) | Full parameter reference |
 | [PC — Check Categories](docs/advisors/performance-check/checks.md) | All checks with severity and fixes |
 | [PC — Reports](docs/advisors/performance-check/reports.md) | Text, Markdown, and HTML output |
+| **Security Check** | |
+| [SC — How It Works](docs/advisors/security-check/how-it-works.md) | 5-phase pipeline deep dive |
+| [SC — Configuration](docs/advisors/security-check/configuration.md) | Full parameter reference |
+| [SC — Check Categories](docs/advisors/security-check/checks.md) | All checks with severity and fixes |
+| [SC — Reports](docs/advisors/security-check/reports.md) | Text, Markdown, and HTML output |
 | **Shared** | |
 | [Cross-Workspace](docs/cross-workspace.md) | Analysing warehouses in other workspaces |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
@@ -154,6 +176,18 @@ src/fabric_warehouse_advisor/
             ├── caching.py             # Result cache & cold start analysis
             ├── vorder.py              # V-Order optimization state
             └── statistics.py          # Statistics health & staleness
+    └── security_check/
+        ├── __init__.py                # Security Check Advisor exports
+        ├── config.py                  # SecurityCheckConfig dataclass
+        ├── advisor.py                 # SecurityCheckAdvisor orchestrator
+        ├── findings.py                # Category constants & re-exports
+        ├── report.py                  # Text, Markdown & HTML report generators
+        └── checks/
+            ├── schema_permissions.py  # SEC-001: Schema permission grants
+            ├── custom_roles.py        # SEC-002: Role hygiene
+            ├── row_level_security.py  # SEC-003: RLS coverage
+            ├── column_level_security.py # SEC-004: CLS coverage
+            └── dynamic_data_masking.py # SEC-005: DDM & UNMASK grants
 ```
 
 ## License

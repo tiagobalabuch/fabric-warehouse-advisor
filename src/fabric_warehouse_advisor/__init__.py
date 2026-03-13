@@ -69,6 +69,13 @@ from .advisors.performance_check import (
     CheckSummary,
 )
 
+# ── Security Check Advisor ─────────────────────────────────────────
+from .advisors.security_check import (
+    SecurityCheckAdvisor,
+    SecurityCheckConfig,
+    SecurityCheckResult,
+)
+
 __all__ = [
     # Core infrastructure
     "read_warehouse_query",
@@ -103,6 +110,10 @@ __all__ = [
     "PerformanceCheckResult",
     "Finding",
     "CheckSummary",
+    # Security Check Advisor
+    "SecurityCheckAdvisor",
+    "SecurityCheckConfig",
+    "SecurityCheckResult",
 ]
 
 try:

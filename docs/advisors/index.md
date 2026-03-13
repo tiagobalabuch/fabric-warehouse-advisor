@@ -6,16 +6,16 @@ its own reports.
 
 ## Advisor Comparison
 
-| | Data Clustering | Performance Check |
-|--|----------------|-------------------|
-| **Purpose** | Recommend optimal `CLUSTER BY` columns | Detect performance anti-patterns |
-| **Output model** | Scored recommendations (0–100) | Findings (Critical / High / Medium / Low / Info) |
-| **Applies to** | DataWarehouse only | DataWarehouse and Lakehouse SQL Endpoints |
-| **Config class** | `DataClusteringConfig` | `PerformanceCheckConfig` |
-| **Result class** | `DataClusteringResult` | `PerformanceCheckResult` |
-| **Reports** | Text, Markdown, HTML | Text, Markdown, HTML |
-| **DDL generation** | Yes (CTAS statements) | Yes (per-finding SQL fixes) |
-| **Phases** | 7 (metadata → scoring) | 7 (edition → statistics) |
+| | Data Clustering | Performance Check | Security Check |
+|--|----------------|-------------------|----------------|
+| **Purpose** | Recommend optimal `CLUSTER BY` columns | Detect performance anti-patterns | Detect security misconfigurations |
+| **Output model** | Scored recommendations (0–100) | Findings (Critical / High / Medium / Low / Info) | Findings (Critical / High / Medium / Low / Info) |
+| **Applies to** | DataWarehouse only | DataWarehouse and Lakehouse SQL Endpoints | DataWarehouse and Lakehouse SQL Endpoints |
+| **Config class** | `DataClusteringConfig` | `PerformanceCheckConfig` | `SecurityCheckConfig` |
+| **Result class** | `DataClusteringResult` | `PerformanceCheckResult` | `SecurityCheckResult` |
+| **Reports** | Text, Markdown, HTML | Text, Markdown, HTML | Text, Markdown, HTML |
+| **DDL generation** | Yes (CTAS statements) | Yes (per-finding SQL fixes) | Yes (per-finding SQL fixes) |
+| **Phases** | 7 (metadata → scoring) | 7 (edition → statistics) | 5 (permissions → DDM) |
 
 
 ## Data Clustering Advisor
@@ -49,15 +49,30 @@ displayHTML(result.html_report)
 
 [Full documentation →](performance-check/index.md)
 
-## Running Both Advisors Together
+## Security Check Advisor
 
-For a comprehensive warehouse health assessment, run both advisors
+Scans your warehouse for security misconfigurations across permissions, roles, Row‑Level Security, Column‑Level Security, and Dynamic Data Masking.
+
+```python
+from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
+
+config = SecurityCheckConfig(warehouse_name="MyWarehouse")
+result = SecurityCheckAdvisor(spark, config).run()
+displayHTML(result.html_report)
+```
+
+[Full documentation →](security-check/index.md)
+
+## Running All Advisors Together
+
+For a comprehensive warehouse health assessment, run all advisors
 in the same notebook:
 
 ```python
 from fabric_warehouse_advisor import (
     DataClusteringAdvisor, DataClusteringConfig,
     PerformanceCheckAdvisor, PerformanceCheckConfig,
+    SecurityCheckAdvisor, SecurityCheckConfig,
 )
 
 warehouse = "MyWarehouse"
@@ -67,12 +82,18 @@ pc_result = PerformanceCheckAdvisor(spark, PerformanceCheckConfig(
     warehouse_name=warehouse,
 )).run()
 
+# Security check — identify access-control gaps
+sc_result = SecurityCheckAdvisor(spark, SecurityCheckConfig(
+    warehouse_name=warehouse,
+)).run()
+
 dc_result = DataClusteringAdvisor(spark, DataClusteringConfig(
     warehouse_name=warehouse,
 )).run()
 
-# Display both reports
+# Display all reports
 displayHTML(pc_result.html_report)
+displayHTML(sc_result.html_report)
 displayHTML(dc_result.html_report)
 ```
 

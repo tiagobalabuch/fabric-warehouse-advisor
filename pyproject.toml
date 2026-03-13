@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fabric-warehouse-advisor"
-version = "1.0.7"
+version = "1.1.0"
 description = "A modular advisory framework for Microsoft Fabric Warehouse — Data Clustering, Performance, Security and more."
 readme = "README.md"
 requires-python = ">=3.9"

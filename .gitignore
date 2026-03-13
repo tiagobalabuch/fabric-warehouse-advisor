@@ -32,3 +32,5 @@ desktop.ini
 # ----------  Misc  ----------
 *.log
 .env
+tests/
+*.sql

@@ -61,5 +61,11 @@ nav:
       - Configuration: advisors/performance-check/configuration.md
       - Check Categories: advisors/performance-check/checks.md
       - Reports: advisors/performance-check/reports.md
+    - Security Check:
+      - Overview: advisors/security-check/index.md
+      - How It Works: advisors/security-check/how-it-works.md
+      - Configuration: advisors/security-check/configuration.md
+      - Check Categories: advisors/security-check/checks.md
+      - Reports: advisors/security-check/reports.md
   - Cross-Workspace: cross-workspace.md
   - Troubleshooting: troubleshooting.md

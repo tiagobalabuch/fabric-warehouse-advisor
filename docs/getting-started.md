@@ -123,6 +123,25 @@ result = advisor.run()
 See the full [Performance Check documentation](advisors/performance-check/index.md)
 for configuration options, check categories, and report formats.
 
+### Security Check Advisor
+
+Analyses your warehouse security posture across permissions, roles,
+RLS, CLS, and Dynamic Data Masking:
+
+```python
+from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
+
+config = SecurityCheckConfig(
+    warehouse_name="MyWarehouse",
+)
+
+advisor = SecurityCheckAdvisor(spark, config)
+result = advisor.run()
+```
+
+See the full [Security Check documentation](advisors/security-check/index.md)
+for configuration options, check categories, and report formats.
+
 ## Working with Results
 
 Both advisors return a result object with pre-formatted reports in three
@@ -191,9 +210,30 @@ for f in result.findings:
             print(f"  → {f.recommendation}")
 ```
 
+### Security Check — Exploring Findings
+
+The Security Check advisor uses the same findings model:
+
+```python
+# Summary counts by severity
+print(f"Critical: {result.critical_count}")
+print(f"High:     {result.high_count}")
+print(f"Medium:   {result.medium_count}")
+print(f"Low:      {result.low_count}")
+print(f"Info:     {result.info_count}")
+
+# Filter by category
+from fabric_warehouse_advisor.advisors.security_check.findings import CATEGORY_PERMISSIONS
+
+perm_findings = result.summary.findings_by_category(CATEGORY_PERMISSIONS)
+for f in perm_findings:
+    print(f"[{f.level}] {f.object_name}: {f.message}")
+```
+
 ## Next Steps
 
 - [Data Clustering Advisor](advisors/data-clustering/index.md) — full documentation
 - [Performance Check Advisor](advisors/performance-check/index.md) — full documentation
+- [Security Check Advisor](advisors/security-check/index.md) — full documentation
 - [Cross-Workspace](cross-workspace.md) — analyse warehouses in other workspaces
 - [Troubleshooting](troubleshooting.md) — common issues and solutions

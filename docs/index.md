@@ -10,6 +10,7 @@ Everything runs inside a **Fabric Notebook** — no external tools, no data leav
 |---------|-------------|--------|
 | [**Data Clustering**](advisors/data-clustering/index.md) | Recommends which tables and columns should use `CLUSTER BY` | Scored recommendations (0–100) with CTAS DDL |
 | [**Performance Check**](advisors/performance-check/index.md) | Detects data-type, query regression, caching misconfigurations, V-Order status, and statistics health problems | Findings (Critical / Warning / Info) |
+| [**Security Check**](advisors/security-check/index.md) | Analyses permissions, roles, RLS, CLS, and Dynamic Data Masking configuration | Findings (Critical / High / Medium / Low / Info) |
 
 ## Why use it?
 
@@ -32,6 +33,7 @@ Everything runs inside a **Fabric Notebook** — no external tools, no data leav
 from fabric_warehouse_advisor import (
     DataClusteringAdvisor, DataClusteringConfig,
     PerformanceCheckAdvisor, PerformanceCheckConfig,
+    SecurityCheckAdvisor, SecurityCheckConfig,
 )
 
 # --- Data Clustering ---
@@ -43,6 +45,11 @@ displayHTML(dc_result.html_report)
 pc_config = PerformanceCheckConfig(warehouse_name="MyWarehouse")
 pc_result = PerformanceCheckAdvisor(spark, pc_config).run()
 displayHTML(pc_result.html_report)
+
+# --- Security Check ---
+sc_config = SecurityCheckConfig(warehouse_name="MyWarehouse")
+sc_result = SecurityCheckAdvisor(spark, sc_config).run()
+displayHTML(sc_result.html_report)
 ```
 
 ## Documentation
@@ -53,6 +60,7 @@ displayHTML(pc_result.html_report)
 | **Advisors** | [Overview](advisors/index.md) |
 | &nbsp;&nbsp;[Data Clustering](advisors/data-clustering/index.md) | Overview, pipeline, configuration, scoring, reports |
 | &nbsp;&nbsp;[Performance Check](advisors/performance-check/index.md) | Overview, pipeline, configuration, checks reference, reports |
+| &nbsp;&nbsp;[Security Check](advisors/security-check/index.md) | Overview, pipeline, configuration, checks reference, reports |
 | [Cross-Workspace](cross-workspace.md) | Analysing warehouses in other workspaces |
 | [Troubleshooting](troubleshooting.md) | Common issues and solutions |
 
