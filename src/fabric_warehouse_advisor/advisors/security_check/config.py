@@ -95,12 +95,21 @@ class SecurityCheckConfig:
     workspace_id: str = ""
     warehouse_id: str = ""
 
-    # -- Toggle check categories --
+    # -- REST API auth --
+    fabric_token: str = ""
+    use_notebook_token: bool = True
+
+    # -- Toggle check categories (T-SQL) --
     check_schema_permissions: bool = True
     check_custom_roles: bool = True
     check_rls: bool = True
     check_cls: bool = True
     check_ddm: bool = True
+
+    # -- Toggle check categories (REST API) --
+    check_workspace_roles: bool = True
+    check_network_isolation: bool = True
+    check_sql_audit: bool = True
 
     # -- SEC-001: Schema Permissions thresholds --
     flag_public_role_grants: bool = True
@@ -124,6 +133,22 @@ class SecurityCheckConfig:
     # -- SEC-005: DDM thresholds --
     max_unmask_principals: int = 3
     flag_weak_masking: bool = True
+
+    # -- SEC-006: Workspace Roles thresholds --
+    max_workspace_admins: int = 3
+
+    # -- SEC-008: SQL Audit Settings thresholds --
+    min_audit_retention_days: int = 90
+
+    # -- SEC-009: Item Permissions thresholds --
+    check_item_permissions: bool = True
+    max_item_readdata_principals: int = 10
+
+    # -- SEC-010: Sensitivity Labels --
+    check_sensitivity_labels: bool = True
+
+    # -- SEC-011: Role Alignment --
+    check_role_alignment: bool = True
 
     # -- Scope filtering --
     table_names: list[str] = field(default_factory=list)

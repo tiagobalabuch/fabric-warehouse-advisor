@@ -35,12 +35,19 @@ from .checks.custom_roles import check_custom_roles
 from .checks.row_level_security import check_row_level_security
 from .checks.column_level_security import check_column_level_security
 from .checks.dynamic_data_masking import check_dynamic_data_masking
+from .checks.workspace_roles import check_workspace_roles
+from .checks.network_isolation import check_network_isolation
+from .checks.sql_audit import check_sql_audit
+from .checks.item_permissions import check_item_permissions
+from .checks.sensitivity_labels import check_sensitivity_labels
+from .checks.role_alignment import check_role_alignment
 from .report import (
     generate_text_report,
     generate_markdown_report,
     generate_html_report,
 )
 from ...core.report import save_report
+from ...core.fabric_rest_client import FabricRestClient, FabricRestError
 
 
 # ------------------------------------------------------------------
@@ -255,6 +262,12 @@ class SecurityCheckAdvisor:
         self._log_kv("check_rls", cfg.check_rls)
         self._log_kv("check_cls", cfg.check_cls)
         self._log_kv("check_ddm", cfg.check_ddm)
+        self._log_kv("check_workspace_roles", cfg.check_workspace_roles)
+        self._log_kv("check_network_isolation", cfg.check_network_isolation)
+        self._log_kv("check_sql_audit", cfg.check_sql_audit)
+        self._log_kv("check_item_permissions", cfg.check_item_permissions)
+        self._log_kv("check_sensitivity_labels", cfg.check_sensitivity_labels)
+        self._log_kv("check_role_alignment", cfg.check_role_alignment)
         self._log_footer()
 
         _run_start = time.perf_counter()
@@ -333,6 +346,232 @@ class SecurityCheckAdvisor:
             _phase_timings["Phase 5: Dynamic Data Masking"] = elapsed
         else:
             self._log("Phase 5: Dynamic Data Masking — SKIPPED (disabled in config)")
+
+        # ================================================================
+        # REST API checks — resolve token once for all REST phases
+        # ================================================================
+        rest_client: FabricRestClient | None = None
+        any_rest_check = (
+            cfg.check_workspace_roles
+            or cfg.check_network_isolation
+            or cfg.check_sql_audit
+            or cfg.check_item_permissions
+            or cfg.check_sensitivity_labels
+            or cfg.check_role_alignment
+        )
+        if any_rest_check:
+            rest_client = FabricRestClient(
+                token=cfg.fabric_token,
+                use_notebook_token=cfg.use_notebook_token,
+                max_retries=5,
+                verbose=cfg.verbose,
+            )
+            if not rest_client.is_available():
+                print(
+                    "  ℹ REST API checks skipped — no Fabric token "
+                    "available (set fabric_token or run in a notebook)."
+                )
+                rest_client = None
+
+        # Auto-resolve workspace_id from notebook context if not provided
+        if rest_client and not cfg.workspace_id:
+            auto_ws = FabricRestClient.get_current_workspace_id(spark)
+            if auto_ws:
+                cfg.workspace_id = auto_ws
+                print(f"  \u2139 Auto-detected workspace_id: {auto_ws}")
+            else:
+                print(
+                    "  \u2139 workspace_id not set and could not be auto-detected.\n"
+                    "    Set workspace_id in config to enable REST API checks."
+                )
+
+        # Resolve warehouse_id from warehouse_name if needed
+        resolved_warehouse_id = cfg.warehouse_id
+        resolved_warehouse_info: dict | None = None
+        needs_warehouse = (
+            cfg.check_sql_audit
+            or cfg.check_item_permissions
+            or cfg.check_sensitivity_labels
+        )
+        if rest_client and cfg.workspace_id and not resolved_warehouse_id and needs_warehouse:
+            self._log("Resolving warehouse_id from warehouse_name ...")
+            try:
+                resolved_warehouse_info = (
+                    rest_client.resolve_warehouse(
+                        cfg.workspace_id, cfg.warehouse_name,
+                    )
+                )
+                if resolved_warehouse_info:
+                    resolved_warehouse_id = resolved_warehouse_info.get("id", "")
+                    self._log(
+                        f"  Resolved: {cfg.warehouse_name} → "
+                        f"{resolved_warehouse_id}"
+                    )
+                else:
+                    self._log(
+                        f"  ⚠ Warehouse '{cfg.warehouse_name}' not "
+                        f"found in workspace {cfg.workspace_id}."
+                    )
+            except FabricRestError as exc:
+                self._log(f"  ⚠ Could not resolve warehouse_id: {exc}")
+
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 6: Workspace Roles (SEC-006) — REST API
+        # ================================================================
+        # Fetch workspace role assignments once — shared by SEC-006,
+        # SEC-009, and SEC-011.
+        workspace_role_assignments: list[dict] | None = None
+        _needs_ws_roles = (
+            cfg.check_workspace_roles
+            or cfg.check_item_permissions
+            or cfg.check_role_alignment
+        )
+        if _needs_ws_roles and rest_client and cfg.workspace_id:
+            try:
+                workspace_role_assignments = (
+                    rest_client.get_workspace_role_assignments(cfg.workspace_id)
+                )
+            except FabricRestError:
+                workspace_role_assignments = None
+
+        if cfg.check_workspace_roles and rest_client and cfg.workspace_id:
+            findings, elapsed = self._run_phase(
+                "Phase 6: Analysing workspace role assignments",
+                check_workspace_roles, rest_client, cfg.workspace_id, cfg,
+            )
+            all_findings.extend(findings)
+            _phase_timings["Phase 6: Workspace Roles"] = elapsed
+        else:
+            reason = (
+                "disabled in config" if not cfg.check_workspace_roles
+                else "no REST token" if not rest_client
+                else "workspace_id not set"
+            )
+            print(f"  ℹ Phase 6: Workspace roles — SKIPPED ({reason})")
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 7: Network Isolation (SEC-007) — REST API
+        # ================================================================
+        if cfg.check_network_isolation and rest_client and cfg.workspace_id:
+            findings, elapsed = self._run_phase(
+                "Phase 7: Analysing network isolation",
+                check_network_isolation, rest_client, cfg.workspace_id, cfg,
+            )
+            all_findings.extend(findings)
+            _phase_timings["Phase 7: Network Isolation"] = elapsed
+        else:
+            reason = (
+                "disabled in config" if not cfg.check_network_isolation
+                else "no REST token" if not rest_client
+                else "workspace_id not set"
+            )
+            print(f"  ℹ Phase 7: Network isolation — SKIPPED ({reason})")
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 8: SQL Audit Settings (SEC-008) — REST API
+        # ================================================================
+        if cfg.check_sql_audit and rest_client and cfg.workspace_id and resolved_warehouse_id:
+            findings, elapsed = self._run_phase(
+                "Phase 8: Analysing SQL audit settings",
+                check_sql_audit, rest_client, cfg.workspace_id,
+                resolved_warehouse_id, cfg,
+            )
+            all_findings.extend(findings)
+            _phase_timings["Phase 8: SQL Audit Settings"] = elapsed
+        else:
+            reason = (
+                "disabled in config" if not cfg.check_sql_audit
+                else "no REST token" if not rest_client
+                else "workspace_id not set" if not cfg.workspace_id
+                else "warehouse_id could not be resolved"
+            )
+            print(f"  ℹ Phase 8: SQL audit settings — SKIPPED ({reason})")
+
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 9: Item Permissions (SEC-009) — Admin API
+        # ================================================================
+        if cfg.check_item_permissions and rest_client and cfg.workspace_id and resolved_warehouse_id:
+            # Build principal→role lookup for SEC-009 cross-reference
+            ws_principal_roles: dict[str, str] = {}
+            if workspace_role_assignments:
+                for a in workspace_role_assignments:
+                    pid = a.get("principal", {}).get("id", "")
+                    if pid:
+                        ws_principal_roles[pid] = a.get("role", "")
+
+            findings, elapsed = self._run_phase(
+                "Phase 9: Analysing item permissions (Admin API)",
+                check_item_permissions, rest_client, cfg.workspace_id,
+                resolved_warehouse_id, cfg, ws_principal_roles,
+            )
+            all_findings.extend(findings)
+            _phase_timings["Phase 9: Item Permissions"] = elapsed
+        else:
+            reason = (
+                "disabled in config" if not cfg.check_item_permissions
+                else "no REST token" if not rest_client
+                else "workspace_id not set" if not cfg.workspace_id
+                else "warehouse_id could not be resolved"
+            )
+            print(f"  ℹ Phase 9: Item permissions — SKIPPED ({reason})")
+
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 10: Sensitivity Labels (SEC-010) — from list_warehouses
+        # ================================================================
+        if cfg.check_sensitivity_labels and rest_client and cfg.workspace_id:
+            wh_info = resolved_warehouse_info
+            # If we didn't resolve earlier, try to fetch now
+            if not wh_info and resolved_warehouse_id:
+                wh_info = {"id": resolved_warehouse_id, "displayName": cfg.warehouse_name}
+            if wh_info:
+                findings, elapsed = self._run_phase(
+                    "Phase 10: Checking sensitivity labels",
+                    check_sensitivity_labels, wh_info, cfg,
+                )
+                all_findings.extend(findings)
+                _phase_timings["Phase 10: Sensitivity Labels"] = elapsed
+            else:
+                print(
+                    "  ℹ Phase 10: Sensitivity labels — SKIPPED "
+                    "(warehouse could not be resolved)"
+                )
+        else:
+            reason = (
+                "disabled in config" if not cfg.check_sensitivity_labels
+                else "no REST token" if not rest_client
+                else "workspace_id not set"
+            )
+            print(f"  ℹ Phase 10: Sensitivity labels — SKIPPED ({reason})")
+
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 11: Role Alignment (SEC-011) — T-SQL + REST cross-ref
+        # ================================================================
+        if cfg.check_role_alignment:
+            findings, elapsed = self._run_phase(
+                "Phase 11: Analysing role alignment",
+                check_role_alignment, spark, cfg.warehouse_name, cfg,
+                workspace_role_assignments,
+            )
+            all_findings.extend(findings)
+            _phase_timings["Phase 11: Role Alignment"] = elapsed
+        else:
+            print("  ℹ Phase 11: Role alignment — SKIPPED (disabled in config)")
 
         # ================================================================
         # Build summary and reports
