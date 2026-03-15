@@ -398,44 +398,6 @@ def generate_markdown_report(
 # HTML REPORT  (for displayHTML() in Fabric notebooks)
 # ══════════════════════════════════════════════════════════════════════
 
-_CSS = """\
-<style>
-  .fca-report { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 1200px; margin: 0 auto; padding: 24px; line-height: 1.6; }
-  .fca-report h1 { font-size: 1.6em; color: #0078d4; border-bottom: 3px solid #0078d4; padding-bottom: 12px; margin-bottom: 24px; }
-  .fca-report h2 { font-size: 1.3em; color: #1a1a2e; margin-top: 32px; margin-bottom: 12px; }
-  .fca-report h3 { font-size: 1.1em; margin-top: 1.2em; }
-  .fca-report .meta-bar { background: #f5f8fc; border-left: 4px solid #0078d4; padding: 10px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; color: #555; }
-  .fca-report .meta-bar strong { color: #333; }
-  .fca-report table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.9em; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-  .fca-report th { background: #1a1a2e; color: #fff; text-align: left; padding: 10px 14px; font-size: 0.85em; }
-  .fca-report td { padding: 10px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
-  .fca-report tr:nth-child(even) { background: #f5f8fc; }
-  .fca-report tr:last-child td { border-bottom: none; }
-  .fca-report .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-  .fca-report .summary-card { background: #f5f8fc; border-left: 4px solid #0078d4; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); text-align: center; }
-  .fca-report .summary-card .num { font-size: 1.6em; font-weight: bold; color: #0078d4; }
-  .fca-report .summary-card .label { font-size: 0.85em; color: #555; }
-  .fca-report .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
-  .fca-report .badge-rec  { background: #dff6dd; color: #107c10; }
-  .fca-report .badge-consider { background: #fff4ce; color: #8a6914; }
-  .fca-report .badge-no   { background: #fde7e9; color: #d13438; }
-  .fca-report .badge-clust { background: #e0e7ff; color: #4a5568; }
-  .fca-report .score-bar { display: inline-block; height: 14px; border-radius: 3px; }
-  .fca-report .score-fill { background: #0078d4; height: 100%; border-radius: 3px; display: inline-block; }
-  .fca-report .score-empty { background: #e0e0e0; height: 100%; border-radius: 3px; display: inline-block; }
-  .fca-report .ddl-block { background: #1e1e1e; color: #d4d4d4; padding: 12px 16px; border-radius: 6px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 0.85em; overflow-x: auto; white-space: pre-wrap; }
-  .fca-report .tip-row td:first-child { text-align: center; width: 30px; }
-  .fca-report .tip-row td:last-child { text-align: left; }
-  .fca-report .warn-box { background: #fff4ce; border-left: 4px solid #ffb900; padding: 8px 12px; margin: 6px 0; border-radius: 4px; font-size: 0.9em; }
-  .fca-report details { margin: 8px 0; }
-  .fca-report summary { cursor: pointer; font-weight: 600; color: #0078d4; font-size: 1.1em; padding: 6px 0; }
-  .fca-report .table-header { background: #f0f4f8; padding: 8px 12px; border-radius: 4px; margin-bottom: 8px; }
-  .fca-report hr { border: none; border-top: 1px solid #e0e0e0; margin: 20px 0; }
-  .fca-report code { background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
-  .fca-report .footer { margin-top: 40px; text-align: center; color: #999; font-size: 0.85em; }
-</style>
-"""
-
 
 def _score_html_bar(score: int, width_px: int = 120) -> str:
     fill = int(score / 100 * width_px)
@@ -447,17 +409,17 @@ def _score_html_bar(score: int, width_px: int = 120) -> str:
     )
 
 
-def _rec_badge(recommendation: str) -> str:
+def _rec_pill(recommendation: str) -> str:
     r = recommendation.upper()
     if "RECOMMENDED" in r and "NOT" not in r:
-        cls = "badge-rec"
+        cls = "pill-rec"
     elif "CONSIDER" in r:
-        cls = "badge-consider"
+        cls = "pill-consider"
     elif "ALREADY" in r:
-        cls = "badge-clust"
+        cls = "pill-clust"
     else:
-        cls = "badge-no"
-    return f'<span class="badge {cls}">{_html.escape(recommendation)}</span>'
+        cls = "pill-no"
+    return f'<span class="pill {cls}">{_html.escape(recommendation)}</span>'
 
 
 def generate_html_report(
@@ -466,22 +428,14 @@ def generate_html_report(
     captured_at: str | None = None,
     warehouse_name: str = "",
 ) -> str:
-    """Generate a self-contained HTML report for ``displayHTML()`` in Fabric.
+    """Generate a self-contained HTML report for ``displayHTML()`` in Fabric."""
+    from ...core.html_template import (
+        esc, html_open, html_close, render_sidebar, render_main_open,
+        render_info_stats, render_footer,
+    )
 
-    This is the recommended way to view results in a Fabric notebook.
-    """
     if captured_at is None:
         captured_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-
-    h: list[str] = [_CSS, '<div class="fca-report">']
-
-    # ── Header ──────────────────────────────────────────────────────
-    h.append(f"<h1>{_ICON_ROCKET} Fabric Warehouse Data Clustering Advisor</h1>")
-    meta_parts = []
-    if warehouse_name:
-        meta_parts.append(f"<strong>Warehouse:</strong> {_html.escape(warehouse_name)}")
-    meta_parts.append(f"{_ICON_GEAR} Generated: {captured_at}")
-    h.append(f'<div class="meta-bar">{" &nbsp;|&nbsp; ".join(meta_parts)}</div>')
 
     total_tables = len(recommendations)
     tables_with_recs = sum(1 for r in recommendations if r.recommended_columns)
@@ -489,68 +443,104 @@ def generate_html_report(
         1 for r in recommendations if r.currently_clustered_columns
     )
 
-    # ── Summary Cards ───────────────────────────────────────────────
-    h.append(f"<h2>{_ICON_BAR} Executive Summary</h2>")
-    h.append('<div class="summary-grid">')
-    cards = [
-        (_ICON_TABLE, total_tables, "Tables Analysed"),
-        (_ICON_STAR, tables_with_recs, "With Recommendations"),
-        (_ICON_LOCK, tables_clustered, "Already Clustered"),
-        (_ICON_GEAR, min_score, "Score Threshold"),
-    ]
-    for icon, num, label in cards:
+    h: list[str] = []
+
+    # ── Document open ───────────────────────────────────────────────
+    h.append(html_open("Data Clustering Dashboard | Fabric Warehouse"))
+
+    # ── Build tab list (tables + optional All DDL + Best Practices) ─
+    tabs: list[tuple[str, str]] = []
+    for idx, rec in enumerate(recommendations):
+        tabs.append((f"pane-{idx}", f"[{rec.schema_name}].[{rec.table_name}]"))
+
+    ddl_lines = [r.cluster_by_ddl for r in recommendations if r.cluster_by_ddl]
+    if ddl_lines:
+        tabs.append(("pane-ddl", "All DDL"))
+    tabs.append(("pane-bp", "Best Practices"))
+
+    # ── Sidebar ─────────────────────────────────────────────────────
+    h.append(render_sidebar(
+        brand_text="Clustering Advisor",
+        report_type="clustering",
+        warehouse_name=warehouse_name,
+        tabs=tabs,
+        generated_at=captured_at,
+    ))
+
+    # ── Main content ────────────────────────────────────────────────
+    h.append(render_main_open(
+        "Dashboard",
+        "Recommendations for optimizing table clustering in your warehouse.",
+    ))
+
+    h.append(render_info_stats([
+        ("Tables Analysed", total_tables, "stat-primary"),
+        ("Recommendations", tables_with_recs, "stat-primary"),
+        ("Already Clustered", tables_clustered, "stat-primary"),
+        ("Score Threshold", min_score, "stat-primary"),
+    ]))
+
+    # ── Per-table tab panes ─────────────────────────────────────────
+    for idx, rec in enumerate(recommendations):
+        esc_tbl = esc(f"[{rec.schema_name}].[{rec.table_name}]")
+        active_cls = " active" if idx == 0 else ""
+        hidden = "" if idx == 0 else ' hidden'
+
         h.append(
-            f'<div class="summary-card">'
-            f'<div class="num">{icon} {num}</div>'
-            f'<div class="label">{label}</div></div>'
+            f'<div class="tab-pane{active_cls}" id="pane-{idx}" '
+            f'role="tabpanel"{hidden}>'
         )
-    h.append("</div>")
+        h.append(f'<h2 class="print-title">{esc_tbl}</h2>')
 
-    if not recommendations:
+        # Meta row
+        h.append('<div class="section-meta">')
         h.append(
-            f'<div class="warn-box">{_ICON_WARN} No candidate columns met '
-            "the scoring threshold. Ensure Query Insights is enabled and "
-            "queries with WHERE filters have been running.</div>"
+            f'<span class="pill pill-clust">{rec.row_count:,} rows</span>'
         )
-        h.append("</div>")
-        return "\n".join(h)
-
-    # ── Per-table sections ──────────────────────────────────────────
-    h.append(f"<h2>{_ICON_MAG} Recommendations by Table</h2>")
-
-    for idx, rec in enumerate(recommendations, 1):
-        esc_tbl = _html.escape(f"[{rec.schema_name}].[{rec.table_name}]")
-        h.append(
-            f'<details open><summary><b>{_ICON_DB} <code>{esc_tbl}</code></b></summary>'
-        )
-
-        h.append('<div class="table-header">')
-        h.append(f"<b>Rows:</b> {rec.row_count:,}")
         if rec.currently_clustered_columns:
             cols_str = ", ".join(rec.currently_clustered_columns)
             h.append(
-                f" &nbsp;|&nbsp; <b>{_ICON_KEY} Current CLUSTER BY:</b> "
-                f"<code>{_html.escape(cols_str)}</code>"
+                f'<span><strong>{_ICON_KEY} Current CLUSTER BY:</strong> '
+                f'<code>{esc(cols_str)}</code></span>'
             )
         else:
             h.append(
-                f" &nbsp;|&nbsp; <b>{_ICON_KEY} Current CLUSTER BY:</b> "
-                "<em>(none)</em>"
+                f'<span><strong>{_ICON_KEY} Current CLUSTER BY:</strong> '
+                '<em>(none)</em></span>'
             )
-        h.append("</div>")
+        h.append('</div>')
 
         if hasattr(rec, "warnings") and rec.warnings:
             for w in rec.warnings:
-                h.append(f'<div class="warn-box">{_ICON_WARN} {_html.escape(w)}</div>')
+                h.append(
+                    f'<div class="warn-box">'
+                    f'{_ICON_WARN} {_html.escape(w)}</div>'
+                )
 
-        # Score table
-        h.append("<table>")
+        # Column score table
+        h.append('<div class="table-container"><div class="table-scroll">')
+        h.append('<table>')
         h.append(
-            "<tr><th></th><th>Column</th><th>Type</th>"
-            "<th>Pred.&nbsp;Hits</th><th>Distinct</th>"
-            "<th>Ratio</th><th>Pct</th><th>Cardinality</th>"
-            "<th>Score</th><th>Recommendation</th></tr>"
+            '<thead><tr>'
+            '<th></th>'
+            '<th data-sort="text">Column '
+            '<span class="sort-icon">\u21C5</span></th>'
+            '<th data-sort="text">Type '
+            '<span class="sort-icon">\u21C5</span></th>'
+            '<th data-sort="num" style="text-align:right">Pred.&nbsp;Hits '
+            '<span class="sort-icon">\u21C5</span></th>'
+            '<th data-sort="num" style="text-align:right">Distinct '
+            '<span class="sort-icon">\u21C5</span></th>'
+            '<th style="text-align:right">Ratio</th>'
+            '<th style="text-align:right">Pct</th>'
+            '<th>Cardinality</th>'
+            '<th data-sort="num">Score '
+            '<span class="sort-icon">\u21C5</span></th>'
+            '<th>Recommendation</th>'
+            '</tr></thead>'
         )
+        h.append('<tbody>')
+
         for cs in rec.recommended_columns:
             ci = _cardinality_icon(cs.cardinality_level)
             card_display = _cardinality_display(cs.cardinality_level)
@@ -570,55 +560,68 @@ def generate_html_report(
                     f'{_html.escape(cs.optimization_flag)}</small>'
                 )
             h.append(
-                f"<tr>"
-                f"<td>{si}</td>"
-                f"<td><code>{_html.escape(cs.column_name)}</code></td>"
-                f"<td><code>{_html.escape(_type_display(cs))}</code></td>"
-                f"<td style='text-align:right'>{cs.predicate_hits}</td>"
-                f"<td style='text-align:right'>{distinct_str}</td>"
-                f"<td style='text-align:right'>{ratio_str}</td>"
-                f"<td style='text-align:right'>{pct_str}</td>"
-                f"<td>{ci} {card_display}</td>"
-                f"<td>{_score_html_bar(cs.composite_score)}</td>"
-                f"<td>{_rec_badge(cs.recommendation)}{flag_html}</td>"
-                f"</tr>"
+                f'<tr>'
+                f'<td>{si}</td>'
+                f'<td><code>{_html.escape(cs.column_name)}</code></td>'
+                f'<td><code>{_html.escape(_type_display(cs))}</code></td>'
+                f'<td style="text-align:right">{cs.predicate_hits}</td>'
+                f'<td style="text-align:right">{distinct_str}</td>'
+                f'<td style="text-align:right">{ratio_str}</td>'
+                f'<td style="text-align:right">{pct_str}</td>'
+                f'<td>{ci} {card_display}</td>'
+                f'<td>{_score_html_bar(cs.composite_score)}</td>'
+                f'<td>{_rec_pill(cs.recommendation)}{flag_html}</td>'
+                f'</tr>'
             )
-        h.append("</table>")
+        h.append('</tbody></table>')
+        h.append('</div></div>')  # table-scroll + table-container
 
+        # DDL block
         if rec.cluster_by_ddl:
             h.append(
-                f"<details><summary>{_ICON_BOLT} <b>Suggested DDL "
-                f"(one CTAS per candidate)</b></summary>"
+                f'<details class="sql-details ddl-details">'
+                f'<summary>{_ICON_BOLT} Suggested DDL (one CTAS per candidate)</summary>'
+                f'<div class="ddl-block">{_html.escape(rec.cluster_by_ddl)}</div>'
+                f'</details>'
             )
-            h.append(
-                f'<div class="ddl-block">'
-                f'{_html.escape(rec.cluster_by_ddl)}</div>'
-            )
-            h.append("</details>")
 
-        h.append("<hr>")
-        h.append("</details>")  # close collapsible table section
+        h.append('</div>')  # tab-pane
 
-    # ── All DDL ─────────────────────────────────────────────────────
-    ddl_lines = [r.cluster_by_ddl for r in recommendations if r.cluster_by_ddl]
+    # ── All DDL tab pane ────────────────────────────────────────────
     if ddl_lines:
+        h.append('<div class="tab-pane" id="pane-ddl" role="tabpanel" hidden>')
+        h.append(f'<h2 class="print-title">All Suggested DDL (CTAS)</h2>')
         h.append(
-            f'<details><summary><b>{_ICON_BOLT} All Suggested DDL (CTAS)</b></summary>'
-        )
-        h.append(
-            f"<p>{_ICON_BULB} Fabric uses "
-            "<code>CREATE TABLE \u2026 AS SELECT</code> (CTAS) to apply data "
-            "clustering. Each statement creates a <b>new</b> clustered "
-            "table. Pick the column(s) that best suit your workload, then "
-            "drop the original table and rename the new one.</p>"
+            f'<div class="warn-box" style="border-left-color:var(--primary);">'
+            f'{_ICON_BULB} Fabric uses '
+            '<code>Create Table \u2026 As Select</code> (CTAS) to apply data '
+            'clustering. Each statement creates a <b>new</b> clustered '
+            'table. Pick the column(s) that best suit your workload, then '
+            'drop the original table and rename the new one.</div>'
         )
         all_ddl = "\n\n".join(ddl_lines)
         h.append(f'<div class="ddl-block">{_html.escape(all_ddl)}</div>')
-        h.append("</details>")
+        h.append('</div>')  # tab-pane
 
-    # ── Best Practices ──────────────────────────────────────────────
-    h.append(f"<h2>{_ICON_BULB} Best Practices</h2>")
-    h.append('<table>')
+    # ── Best Practices tab pane ─────────────────────────────────────
+    first_is_bp = not recommendations
+    bp_active = " active" if first_is_bp else ""
+    bp_hidden = "" if first_is_bp else ' hidden'
+    h.append(
+        f'<div class="tab-pane{bp_active}" id="pane-bp" '
+        f'role="tabpanel"{bp_hidden}>'
+    )
+    h.append(f'<h2 class="print-title">Best Practices</h2>')
+
+    if not recommendations:
+        h.append(
+            '<div class="warn-box">'
+            '\u26a0\ufe0f No candidate columns met the scoring threshold. '
+            'Ensure Query Insights is enabled and queries with WHERE '
+            'filters have been running.'
+            '</div>'
+        )
+
     tips_html = [
         (_ICON_CHECK, "Data clustering is most effective on <b>large tables</b>."),
         (_ICON_CHECK, "Choose columns with <b>mid-to-high cardinality</b> used in <code>WHERE</code> filters."),
@@ -629,10 +632,13 @@ def generate_html_report(
         (_ICON_WARN, "For <code>char</code>/<code>varchar</code>, only the first 32 characters produce stats."),
         (_ICON_WARN, "For <code>decimal</code> with precision &gt; 18, predicates won't push down."),
     ]
+    h.append('<div class="table-container"><div class="table-scroll"><table>')
     for icon, tip in tips_html:
-        h.append(f'<tr class="tip-row"><td>{icon}</td><td>{tip}</td></tr>')
-    h.append("</table>")
+        h.append(f'<tr><td style="text-align:center;width:36px">{icon}</td><td>{tip}</td></tr>')
+    h.append('</table></div></div>')
+    h.append('</div>')  # tab-pane
 
-    h.append(f'<p class="footer">Generated by Fabric Warehouse Advisor</p>')
-    h.append("</div>")  # close fca-report
+    # ── Footer ──────────────────────────────────────────────────────
+    h.append(render_footer("Generated by Fabric Warehouse Advisor"))
+    h.append(html_close())
     return "\n".join(h)
