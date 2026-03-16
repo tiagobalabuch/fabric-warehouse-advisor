@@ -58,7 +58,7 @@ def check_sensitivity_labels(
         label_id = label.get("labelId") or label.get("id") or ""
 
     item = config.item_label
-    Item = item.capitalize()
+    Item = item[0].upper() + item[1:]
 
     if not label or not label_id:
         findings.append(Finding(

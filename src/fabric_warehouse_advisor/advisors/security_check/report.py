@@ -78,12 +78,13 @@ def generate_text_report(summary: CheckSummary) -> str:
     """Generate a plain-text report with Unicode box drawing."""
     lines: List[str] = []
     w = 72
+    item = "SQL Endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "Warehouse"
 
     lines.append("╔" + "═" * w + "╗")
     lines.append("║" + " Fabric Warehouse Security Check Report".center(w) + "║")
     lines.append("╚" + "═" * w + "╝")
     lines.append("")
-    lines.append(f"  Warehouse : {summary.warehouse_name}")
+    lines.append(f"  {item} : {summary.warehouse_name}")
     lines.append("")
 
     # Summary bar
@@ -159,9 +160,10 @@ def generate_markdown_report(summary: CheckSummary) -> str:
 
     lines.append("# 🔒 Fabric Warehouse Security Check Report")
     lines.append("")
+    item_md = "SQL Endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "Warehouse"
     lines.append(f"| Property | Value |")
-    lines.append(f"|----------|-------|")
-    lines.append(f"| Warehouse | `{summary.warehouse_name}` |")
+    lines.append(f"|----------|-------| ")
+    lines.append(f"| {item_md} | `{summary.warehouse_name}` |")
     lines.append("")
 
     # Summary
@@ -286,10 +288,12 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         badge_label=badge_label,
     ))
 
-    # ── Main content ────────────────────────────────────────────
+    item = "SQL endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "warehouse"
+
+    # ── Main content ────────────────────────────────────────────────
     h.append(render_main_open(
         "Advisor Dashboard",
-        "Comprehensive overview of your warehouse security posture.",
+        f"Comprehensive overview of your {item} security posture.",
     ))
 
     # Severity stat cards

@@ -261,9 +261,6 @@ class SecurityCheckAdvisor:
         if not cfg.warehouse_id and cfg.sql_endpoint_id:
             cfg.warehouse_id = cfg.sql_endpoint_id
 
-        # Set user-facing label used in finding messages
-        cfg.item_label = "SQL endpoint" if cfg.sql_endpoint_id else "warehouse"
-
         # Verbose: show active configuration
         self._log_header("Configuration")
         self._log_kv("Tables filter", cfg.table_names or "(all)")
@@ -295,6 +292,12 @@ class SecurityCheckAdvisor:
         )
         print(f"  Edition: {edition}")
         _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
+
+        # Set user-facing item label based on detected edition
+        if edition == "LakeWarehouse" or cfg.sql_endpoint_id:
+            cfg.item_label = "SQL endpoint"
+        else:
+            cfg.item_label = "warehouse"
 
         # ================================================================
         # Phase 1: Schema Permissions (SEC-001)
