@@ -72,7 +72,7 @@ _LEVEL_ICONS = {
 
 def _edition_label(edition: str | None, *, capitalize: bool = True) -> str:
     """Return 'SQL Endpoint' or 'Warehouse' based on warehouse edition."""
-    is_sql_endpoint = edition and edition != "DataWarehouse"
+    is_sql_endpoint = edition == "LakeWarehouse"
     if capitalize:
         return "SQL Endpoint" if is_sql_endpoint else "Warehouse"
     return "SQL endpoint" if is_sql_endpoint else "warehouse"

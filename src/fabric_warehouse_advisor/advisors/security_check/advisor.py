@@ -255,12 +255,6 @@ class SecurityCheckAdvisor:
         print(f"  Timestamp : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print()
 
-        # Resolve sql_endpoint_id → warehouse_id so all downstream
-        # check functions that use config.warehouse_id work for SQL
-        # Endpoints without changes.
-        if not cfg.warehouse_id and cfg.sql_endpoint_id:
-            cfg.warehouse_id = cfg.sql_endpoint_id
-
         # Verbose: show active configuration
         self._log_header("Configuration")
         self._log_kv("Tables filter", cfg.table_names or "(all)")
@@ -286,10 +280,11 @@ class SecurityCheckAdvisor:
         # ================================================================
         _phase_start = time.perf_counter()
         print("Phase 0: Detecting warehouse edition ...")
-        edition, _ = detect_warehouse_edition(
+        edition, edition_findings = detect_warehouse_edition(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id,
             cfg.sql_endpoint_id,
         )
+        all_findings.extend(edition_findings)
         print(f"  Edition: {edition}")
         _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
 
@@ -412,7 +407,7 @@ class SecurityCheckAdvisor:
 
         # Resolve warehouse_id from warehouse_name if needed
         is_sql_endpoint = edition == "LakeWarehouse"
-        resolved_warehouse_id = cfg.warehouse_id
+        resolved_warehouse_id = cfg.warehouse_id or cfg.sql_endpoint_id
         resolved_warehouse_info: dict | None = None
         needs_warehouse = (
             cfg.check_sql_audit

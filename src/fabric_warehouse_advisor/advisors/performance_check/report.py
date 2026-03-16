@@ -276,7 +276,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
     tabs = [(f"pane-{idx}", label) for idx, (_cat, label) in enumerate(active_cats)]
 
     # Determine badge label based on edition
-    badge_label = "SQL Endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "Warehouse"
+    badge_label = "SQL Endpoint" if summary.warehouse_edition == "LakeWarehouse" else "Warehouse"
 
     # ── Sidebar ─────────────────────────────────────────────────
     h.append(render_sidebar(
