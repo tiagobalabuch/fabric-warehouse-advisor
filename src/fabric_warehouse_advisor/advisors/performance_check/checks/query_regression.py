@@ -35,6 +35,21 @@ from ..findings import (
 # the WITHIN GROUP (ORDER BY ...) aggregate form.  We use a subquery with
 # the window function and then group to get one row per query_hash.
 
+# Schemas whose queries should be excluded from regression analysis.
+_EXCLUDED_SCHEMAS = [
+    "queryinsights.",
+    "sys.",
+]
+
+
+def _build_exclusion_clause() -> str:
+    """Build a SQL AND clause that filters out commands touching excluded schemas."""
+    if not _EXCLUDED_SCHEMAS:
+        return ""
+    parts = [f"command NOT LIKE '%{schema}%'" for schema in _EXCLUDED_SCHEMAS]
+    return "      AND " + "\n      AND ".join(parts)
+
+
 _BASELINE_QUERY = """
 SELECT
     query_hash,
@@ -47,11 +62,12 @@ FROM (
             OVER (PARTITION BY query_hash)                          AS pct_median
     FROM queryinsights.exec_requests_history
     WHERE start_time >= DATEADD(day, -30, GETUTCDATE())
-      AND start_time <  DATEADD(day, -{lookback_days}, GETUTCDATE())
+      AND start_time <  DATEADD(day, -{{lookback_days}}, GETUTCDATE())
+{exclusions}
 ) sub
 GROUP BY query_hash
-HAVING COUNT(*) >= {min_execs}
-"""
+HAVING COUNT(*) >= {{min_execs}}
+""".format(exclusions=_build_exclusion_clause())
 
 _RECENT_QUERY = """
 SELECT
@@ -66,11 +82,12 @@ FROM (
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_elapsed_time_ms)
             OVER (PARTITION BY query_hash)                          AS pct_median
     FROM queryinsights.exec_requests_history
-    WHERE start_time >= DATEADD(day, -{lookback_days}, GETUTCDATE())
+    WHERE start_time >= DATEADD(day, -{{lookback_days}}, GETUTCDATE())
+{exclusions}
 ) sub
 GROUP BY query_hash
-HAVING COUNT(*) >= {min_execs}
-"""
+HAVING COUNT(*) >= {{min_execs}}
+""".format(exclusions=_build_exclusion_clause())
 
 
 # -- Public API ---------------------------------------------------------

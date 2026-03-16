@@ -76,6 +76,8 @@ _ALL_STATISTICS_QUERY = """
         ON sc.object_id = c.object_id
         AND c.column_id = sc.column_id
     WHERE o.type = 'U'
+      AND s.name NOT LIKE 'ACE-AverageColumnLength[_]%'
+      AND s.name <> 'ACE-Cardinality'
 """
 
 _STATS_HEADER_QUERY = """
