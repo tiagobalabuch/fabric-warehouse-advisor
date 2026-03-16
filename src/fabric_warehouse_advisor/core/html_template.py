@@ -29,60 +29,72 @@ def esc(text: str) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 REPORT_CSS = r"""<style>
-  /* ── Light Theme Variables (Default) ──────────────────────────── */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  /* ── Light Theme Variables (Fabric Inspired) ──────────────────── */
   :root {
-    --bg-main: #f4f7fe;
-    --bg-sidebar: #0b1437;
+    --bg-main: #f8f9fa;
     --bg-surface: #ffffff;
-    --text-main: #2b3674;
-    --text-secondary: #a3aed1;
-    --text-muted: #8f9bba;
-    --border-color: #e2e8f0;
+    --bg-sidebar: #13635B;
 
-    --primary: #4318ff;
-    --primary-hover: #3311db;
-    --primary-light: #f4f7fe;
+    --text-main: #201f1e;
+    --text-secondary: #605e5c;
+    --text-muted: #8a8886;
+    --border-color: #edebe9;
 
-    --c-crit: #e11d48; --c-crit-bg: #ffe4e6; --c-crit-text: #9f1239;
-    --c-high: #f97316; --c-high-bg: #ffedd5; --c-high-text: #c2410c;
-    --c-med:  #eab308; --c-med-bg:  #fef9c3; --c-med-text: #854d0e;
-    --c-low:  #10b981; --c-low-bg:  #d1fae5; --c-low-text: #065f46;
-    --c-info: #3b82f6; --c-info-bg: #dbeafe; --c-info-text: #1e40af;
+    --primary: #008080;
+    --primary-hover: #13635B;
+    --primary-light: #E1F5F3;
 
-    --sidebar-text: #a3aed1;
+    --fabric-gradient: linear-gradient(135deg, #13635B 0%, #32C5A5 100%);
+
+    --c-crit: #d13438; --c-crit-bg: #fde7e9; --c-crit-text: #a4262c;
+    --c-high: #ca5010; --c-high-bg: #fdf3e6; --c-high-text: #8e562e;
+    --c-med:  #fce100; --c-med-bg:  #fff9ce; --c-med-text: #5c5300;
+    --c-low:  #107c41; --c-low-bg:  #e1dfdd; --c-low-text: #0b5a2f;
+    --c-info: #0078d4; --c-info-bg: #deecf9; --c-info-text: #005a9e;
+
+    --sidebar-text: #a5d1cc;
     --sidebar-text-active: #ffffff;
-    --sidebar-bg-active: rgba(255,255,255,0.1);
-    --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    --sidebar-bg-active: rgba(255,255,255,0.15);
+    --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.05);
   }
 
-  /* ── Dark Theme Variables ─────────────────────────────────────── */
+  /* ── Dark Theme Variables (Fabric Inspired) ───────────────────── */
   :root.dark {
-    --bg-main: #0b1437;
-    --bg-sidebar: #060b1f;
-    --bg-surface: #111c44;
+    --bg-main: #111414;
+    --bg-sidebar: #0b0d0d;
+    --bg-surface: #1b1f1f;
+
     --text-main: #ffffff;
-    --text-secondary: #a3aed1;
-    --text-muted: #8f9bba;
-    --border-color: #2b3674;
+    --text-secondary: #a19f9d;
+    --text-muted: #8a8886;
+    --border-color: #293030;
 
-    --primary: #7551ff;
-    --primary-hover: #8666ff;
-    --primary-light: rgba(117,81,255,0.1);
+    --primary: #32C5A5;
+    --primary-hover: #97F0D0;
+    --primary-light: rgba(50, 197, 165, 0.15);
 
-    --c-crit: #fb7185; --c-crit-bg: rgba(225,29,72,0.2);  --c-crit-text: #fda4af;
-    --c-high: #fb923c; --c-high-bg: rgba(249,115,22,0.2);  --c-high-text: #fdba74;
-    --c-med:  #facc15; --c-med-bg:  rgba(234,179,8,0.2);   --c-med-text: #fde047;
-    --c-low:  #34d399; --c-low-bg:  rgba(16,185,129,0.2);  --c-low-text: #6ee7b7;
-    --c-info: #60a5fa; --c-info-bg: rgba(59,130,246,0.2);  --c-info-text: #93c5fd;
+    --fabric-gradient: linear-gradient(135deg, #32C5A5 0%, #97F0D0 100%);
 
-    --shadow-card: 0px 18px 40px rgba(0,0,0,0.4);
+    --c-crit: #ff99a4; --c-crit-bg: rgba(209, 52, 56, 0.2);  --c-crit-text: #ffb3b8;
+    --c-high: #f3a071; --c-high-bg: rgba(202, 80, 16, 0.2);  --c-high-text: #f9cbb3;
+    --c-med:  #fce100; --c-med-bg:  rgba(252, 225, 0, 0.15); --c-med-text: #fdf08a;
+    --c-low:  #6BB700; --c-low-bg:  rgba(16, 124, 65, 0.2);  --c-low-text: #92c353;
+    --c-info: #6cb8f6; --c-info-bg: rgba(0, 120, 212, 0.2);  --c-info-text: #a6d8ff;
+
+    --sidebar-text: #8a8886;
+    --sidebar-text-active: #ffffff;
+    --sidebar-bg-active: rgba(50, 197, 165, 0.15);
+
+    --shadow-card: 0px 8px 16px rgba(0, 0, 0, 0.4);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto,
-                 Helvetica, Arial, sans-serif;
+    font-family: 'Inter', "Segoe UI", -apple-system, BlinkMacSystemFont,
+                 Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-main);
     color: var(--text-main);
     font-size: 14px;
@@ -133,8 +145,8 @@ REPORT_CSS = r"""<style>
   .warehouse-badge {
     margin: 16px 16px 0;
     padding: 14px 16px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 12px;
   }
   .warehouse-badge-label {
@@ -178,7 +190,11 @@ REPORT_CSS = r"""<style>
     align-items: center;
   }
   .tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-  .tab-btn.active { background: var(--primary); color: #fff; }
+  .tab-btn.active {
+    background: var(--fabric-gradient);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(19, 99, 91, 0.3);
+  }
   .tab-count {
     background: rgba(0,0,0,0.2); padding: 2px 8px;
     border-radius: 20px; font-size: 11px; font-weight: 700;
@@ -369,9 +385,9 @@ REPORT_CSS = r"""<style>
     border: 1px solid var(--border-color);
   }
   :root.dark code {
-    color: #c4b5fd;
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.12);
+    color: #32C5A5;
+    background: rgba(50,197,165,0.1);
+    border-color: rgba(50,197,165,0.15);
   }
   details.sql-details {
     margin-top: 12px; background: var(--bg-main);
@@ -411,7 +427,7 @@ REPORT_CSS = r"""<style>
 
   /* ── DDL block (data clustering) ──────────────────────────────── */
   .ddl-block {
-    background: #1e293b; color: #e2e8f0;
+    background: #1a1d1d; color: #d4d4d4;
     padding: 16px 18px; border-radius: 10px;
     font-family: Consolas, 'Courier New', monospace;
     font-size: 12px; overflow-x: auto; white-space: pre-wrap;
@@ -454,6 +470,15 @@ REPORT_CSS = r"""<style>
     font-size: 13px; color: var(--text-muted);
   }
   .section-meta strong { color: var(--text-main); }
+
+  /* ── Custom Scrollbars ─────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color); border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  * { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 
   /* ── Responsive ───────────────────────────────────────────────── */
   @media (max-width: 1024px) {
@@ -738,13 +763,14 @@ def render_sidebar(
     tabs: list[tuple[str, str]],
     *,
     generated_at: str = "",
+    badge_label: str = "Warehouse",
 ) -> str:
     """Render the sidebar with brand, warehouse badge, tab nav, and footer.
 
     Parameters
     ----------
     brand_text : str
-        Brand label shown in the sidebar header (e.g. "Security Audit").
+        Brand label shown in the sidebar header (e.g. "Security").
     report_type : str
         One of ``"security"``, ``"performance"``, ``"clustering"`` — used
         to pick the brand icon.
@@ -754,6 +780,8 @@ def render_sidebar(
         Tab buttons. First tab is marked active.
     generated_at : str
         Timestamp shown in the sidebar footer.
+    badge_label : str
+        Label above the warehouse name (e.g. "Warehouse" or "SQL Endpoint").
     """
     icon = REPORT_ICONS.get(report_type, "\U0001f4cb")
     parts: list[str] = [
@@ -763,7 +791,7 @@ def render_sidebar(
         '</div>',
         # Warehouse badge — prominent
         '<div class="warehouse-badge">',
-        '<div class="warehouse-badge-label">Warehouse</div>',
+        f'<div class="warehouse-badge-label">{esc(badge_label)}</div>',
         f'<div class="warehouse-badge-name">{esc(warehouse_name)}</div>',
         '</div>',
     ]
@@ -852,7 +880,7 @@ def render_severity_stats(
         f'<div class="stat-label">Info</div>'
         f'<div class="stat-val">{info}</div></div>\n'
         f'<div class="stat-item stat-total" data-filter="all">'
-        f'<div class="stat-label">Total / Reset</div>'
+        f'<div class="stat-label">Total</div>'
         f'<div class="stat-val">{total}</div></div>\n'
         '</div>\n'
     )

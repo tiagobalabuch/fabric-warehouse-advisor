@@ -262,7 +262,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
     h: List[str] = []
 
     # ── Document open ───────────────────────────────────────────────
-    h.append(html_open("Security Audit Dashboard | Fabric Warehouse"))
+    h.append(html_open("Security Advisor Dashboard | Fabric Warehouse"))
 
     # ── Build tab list ──────────────────────────────────────────────
     active_cats = [
@@ -273,18 +273,22 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
 
     tabs = [(f"pane-{idx}", label) for idx, (_cat, label) in enumerate(active_cats)]
 
-    # ── Sidebar ─────────────────────────────────────────────────────
+    # Determine badge label based on edition
+    badge_label = "SQL Endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "Warehouse"
+
+    # ── Sidebar ─────────────────────────────────────────────────
     h.append(render_sidebar(
-        brand_text="Security Audit",
+        brand_text="Security",
         report_type="security",
         warehouse_name=summary.warehouse_name,
         tabs=tabs,
         generated_at=captured_at,
+        badge_label=badge_label,
     ))
 
-    # ── Main content ────────────────────────────────────────────────
+    # ── Main content ────────────────────────────────────────────
     h.append(render_main_open(
-        "Dashboard",
+        "Advisor Dashboard",
         "Comprehensive overview of your warehouse security posture.",
     ))
 

@@ -264,7 +264,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
     h: List[str] = []
 
     # ── Document open ───────────────────────────────────────────────
-    h.append(html_open("Performance Check Dashboard | Fabric Warehouse"))
+    h.append(html_open("Performance Advisor Dashboard | Fabric Warehouse"))
 
     # ── Build tab list ──────────────────────────────────────────────
     active_cats = [
@@ -275,18 +275,22 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
 
     tabs = [(f"pane-{idx}", label) for idx, (_cat, label) in enumerate(active_cats)]
 
-    # ── Sidebar ─────────────────────────────────────────────────────
+    # Determine badge label based on edition
+    badge_label = "SQL Endpoint" if summary.warehouse_edition and summary.warehouse_edition != "DataWarehouse" else "Warehouse"
+
+    # ── Sidebar ─────────────────────────────────────────────────
     h.append(render_sidebar(
-        brand_text="Performance Check",
+        brand_text="Performance",
         report_type="performance",
         warehouse_name=summary.warehouse_name,
         tabs=tabs,
         generated_at=captured_at,
+        badge_label=badge_label,
     ))
 
-    # ── Main content ────────────────────────────────────────────────
+    # ── Main content ────────────────────────────────────────────
     h.append(render_main_open(
-        "Dashboard",
+        "Advisor Dashboard",
         "Analysis of warehouse performance patterns and optimizations.",
     ))
 

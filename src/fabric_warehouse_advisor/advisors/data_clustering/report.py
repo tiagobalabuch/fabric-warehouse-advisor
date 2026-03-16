@@ -460,16 +460,16 @@ def generate_html_report(
 
     # ── Sidebar ─────────────────────────────────────────────────────
     h.append(render_sidebar(
-        brand_text="Clustering Advisor",
+        brand_text="Data Clustering",
         report_type="clustering",
         warehouse_name=warehouse_name,
         tabs=tabs,
         generated_at=captured_at,
     ))
 
-    # ── Main content ────────────────────────────────────────────────
+    # ── Main content ────────────────────────────────────────────
     h.append(render_main_open(
-        "Dashboard",
+        "Advisor Dashboard",
         "Recommendations for optimizing table clustering in your warehouse.",
     ))
 
@@ -494,9 +494,6 @@ def generate_html_report(
 
         # Meta row
         h.append('<div class="section-meta">')
-        h.append(
-            f'<span class="pill pill-clust">{rec.row_count:,} rows</span>'
-        )
         if rec.currently_clustered_columns:
             cols_str = ", ".join(rec.currently_clustered_columns)
             h.append(
@@ -508,6 +505,9 @@ def generate_html_report(
                 f'<span><strong>{_ICON_KEY} Current CLUSTER BY:</strong> '
                 '<em>(none)</em></span>'
             )
+        h.append(
+            f'<span class="pill pill-clust" style="margin-left:auto">{rec.row_count:,} rows</span>'
+        )
         h.append('</div>')
 
         if hasattr(rec, "warnings") and rec.warnings:
@@ -522,21 +522,34 @@ def generate_html_report(
         h.append('<table>')
         h.append(
             '<thead><tr>'
-            '<th></th>'
             '<th data-sort="text">Column '
             '<span class="sort-icon">\u21C5</span></th>'
             '<th data-sort="text">Type '
             '<span class="sort-icon">\u21C5</span></th>'
-            '<th data-sort="num" style="text-align:right">Pred.&nbsp;Hits '
-            '<span class="sort-icon">\u21C5</span></th>'
-            '<th data-sort="num" style="text-align:right">Distinct '
-            '<span class="sort-icon">\u21C5</span></th>'
-            '<th style="text-align:right">Ratio</th>'
-            '<th style="text-align:right">Pct</th>'
-            '<th>Cardinality</th>'
-            '<th data-sort="num">Score '
-            '<span class="sort-icon">\u21C5</span></th>'
-            '<th>Recommendation</th>'
+            '<th data-sort="num" style="text-align:right" '
+            'title="Number of WHERE clause predicates referencing this column in recent queries. '
+            'Higher values indicate the column is frequently filtered and may benefit more from clustering.">'
+            'Pred.&nbsp;Hits <span class="sort-icon">\u21C5</span></th>'
+            '<th data-sort="num" style="text-align:right" '
+            'title="Approximate number of distinct (unique) values in this column.">'
+            'Distinct <span class="sort-icon">\u21C5</span></th>'
+            '<th style="text-align:right" '
+            'title="Cardinality ratio: distinct values divided by total row count. '
+            'Values closer to 0 mean many duplicates; closer to 1 means mostly unique.">'
+            'Ratio</th>'
+            '<th style="text-align:right" '
+            'title="Cardinality ratio expressed as a percentage.">'
+            'Pct</th>'
+            '<th title="Classification of the column\u2019s cardinality: '
+            'High (many unique values), Medium, or Low (few unique values). '
+            'Mid-to-high cardinality columns are the best clustering candidates.">'
+            'Cardinality</th>'
+            '<th data-sort="num" '
+            'title="Composite score (0\u2013100) combining predicate frequency, cardinality, '
+            'and data type suitability. Higher is better.">'
+            'Score <span class="sort-icon">\u21C5</span></th>'
+            '<th title="Final recommendation based on the composite score and column characteristics.">'
+            'Recommendation</th>'
             '</tr></thead>'
         )
         h.append('<tbody>')
@@ -544,7 +557,6 @@ def generate_html_report(
         for cs in rec.recommended_columns:
             ci = _cardinality_icon(cs.cardinality_level)
             card_display = _cardinality_display(cs.cardinality_level)
-            si = _score_emoji(cs.composite_score, min_score, cs.recommendation)
             distinct_str = (
                 f"{cs.approx_distinct:,}" if cs.approx_distinct >= 0 else "N/A"
             )
@@ -561,7 +573,6 @@ def generate_html_report(
                 )
             h.append(
                 f'<tr>'
-                f'<td>{si}</td>'
                 f'<td><code>{_html.escape(cs.column_name)}</code></td>'
                 f'<td><code>{_html.escape(_type_display(cs))}</code></td>'
                 f'<td style="text-align:right">{cs.predicate_hits}</td>'

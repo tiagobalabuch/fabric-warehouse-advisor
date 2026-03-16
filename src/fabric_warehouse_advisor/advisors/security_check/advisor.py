@@ -41,6 +41,7 @@ from .checks.sql_audit import check_sql_audit
 from .checks.item_permissions import check_item_permissions
 from .checks.sensitivity_labels import check_sensitivity_labels
 from .checks.role_alignment import check_role_alignment
+from ..performance_check.checks.warehouse_type import detect_warehouse_edition
 from .report import (
     generate_text_report,
     generate_markdown_report,
@@ -273,6 +274,17 @@ class SecurityCheckAdvisor:
         _run_start = time.perf_counter()
         _phase_timings: Dict[str, float] = {}
         all_findings: List[Finding] = []
+
+        # ================================================================
+        # Phase 0: Detect warehouse edition
+        # ================================================================
+        _phase_start = time.perf_counter()
+        print("Phase 0: Detecting warehouse edition ...")
+        edition, _ = detect_warehouse_edition(
+            spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id,
+        )
+        print(f"  Edition: {edition}")
+        _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
 
         # ================================================================
         # Phase 1: Schema Permissions (SEC-001)
@@ -591,6 +603,7 @@ class SecurityCheckAdvisor:
 
         summary = CheckSummary(
             warehouse_name=cfg.warehouse_name,
+            warehouse_edition=edition,
             findings=all_findings,
         )
 
