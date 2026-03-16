@@ -52,15 +52,23 @@ def check_sensitivity_labels(
 
     label: Optional[Dict[str, Any]] = warehouse_info.get("sensitivityLabel")
 
-    if not label or not label.get("labelId"):
+    # The warehouse API returns labelId; the SQL endpoint API returns id.
+    label_id = ""
+    if label:
+        label_id = label.get("labelId") or label.get("id") or ""
+
+    item = config.item_label
+    Item = item.capitalize()
+
+    if not label or not label_id:
         findings.append(Finding(
             level=LEVEL_HIGH,
             category=CATEGORY_SENSITIVITY_LABELS,
             check_name="no_sensitivity_label",
             object_name=wh_name,
             message=(
-                "Warehouse has no Microsoft Purview sensitivity "
-                "label applied."
+                f"{Item} has no Microsoft Purview sensitivity "
+                f"label applied."
             ),
             detail=(
                 "Sensitivity labels help classify and protect data "
@@ -69,19 +77,18 @@ def check_sensitivity_labels(
                 "automatically enforce data protection policies."
             ),
             recommendation=(
-                "Apply an appropriate sensitivity label to this "
-                "warehouse in the Fabric portal (item settings → "
-                "Sensitivity label) or via Microsoft Purview."
+                f"Apply an appropriate sensitivity label to this "
+                f"{item} in the Fabric portal (item settings → "
+                f"Sensitivity label) or via Microsoft Purview."
             ),
         ))
     else:
-        label_id = label.get("labelId", "")
         findings.append(Finding(
             level=LEVEL_INFO,
             category=CATEGORY_SENSITIVITY_LABELS,
             check_name="sensitivity_label_applied",
             object_name=wh_name,
-            message="Warehouse has a sensitivity label applied.",
+            message=f"{Item} has a sensitivity label applied.",
             detail=f"Label ID: {label_id}.",
         ))
 

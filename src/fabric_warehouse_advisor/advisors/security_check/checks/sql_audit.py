@@ -101,8 +101,9 @@ def check_sql_audit(
     workspace_id: str,
     warehouse_id: str,
     config: SecurityCheckConfig,
+    is_sql_endpoint: bool = False,
 ) -> List[Finding]:
-    """Analyse SQL audit settings for a warehouse.
+    """Analyse SQL audit settings for a warehouse or SQL endpoint.
 
     Parameters
     ----------
@@ -111,9 +112,12 @@ def check_sql_audit(
     workspace_id : str
         Target workspace ID.
     warehouse_id : str
-        Target warehouse item ID (GUID).
+        Target warehouse / SQL endpoint item ID (GUID).
     config : SecurityCheckConfig
         Advisor configuration.
+    is_sql_endpoint : bool
+        If *True*, use the SQL Endpoint audit settings API instead
+        of the Warehouse audit settings API.
 
     Returns
     -------
@@ -122,10 +126,18 @@ def check_sql_audit(
     """
     findings: List[Finding] = []
     object_name = config.warehouse_name or warehouse_id
+    item = config.item_label
 
     # ── Fetch settings ────────────────────────────────────────────
     try:
-        audit = rest_client.get_sql_audit_settings(workspace_id, warehouse_id)
+        if is_sql_endpoint:
+            audit = rest_client.get_sql_endpoint_audit_settings(
+                workspace_id, warehouse_id,
+            )
+        else:
+            audit = rest_client.get_sql_audit_settings(
+                workspace_id, warehouse_id,
+            )
     except FabricRestError as exc:
         findings.append(Finding(
             level=LEVEL_LOW,
@@ -135,9 +147,8 @@ def check_sql_audit(
             message="Unable to retrieve SQL audit settings.",
             detail=f"REST API error: {exc}",
             recommendation=(
-                "Ensure you have Reader or higher permission on the "
-                "warehouse item and the token has Warehouse.Read.All or "
-                "Item.Read.All scope."
+                f"Ensure you have Reader or higher permission on the "
+                f"{item} item and the token has Item.Read.All scope."
             ),
         ))
         return findings
@@ -153,7 +164,7 @@ def check_sql_audit(
             category=CATEGORY_SQL_AUDIT,
             check_name="sql_audit_disabled",
             object_name=object_name,
-            message="SQL auditing is disabled on this warehouse.",
+            message=f"SQL auditing is disabled on this {item}.",
             detail=(
                 f"Current state: '{state}'. Without SQL auditing, "
                 f"database activity is not logged and security "

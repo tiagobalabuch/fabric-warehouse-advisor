@@ -93,7 +93,7 @@ def check_row_level_security(
             object_name=warehouse,
             message="Unable to query RLS metadata.",
             detail="The current user may lack VIEW DEFINITION permission.",
-            recommendation="Ensure the executing identity has VIEW DEFINITION on the warehouse.",
+            recommendation=f"Ensure the executing identity has VIEW DEFINITION on the {config.item_label}.",
         ))
         return findings
 

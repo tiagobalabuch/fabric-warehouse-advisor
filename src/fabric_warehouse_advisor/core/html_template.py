@@ -258,6 +258,14 @@ REPORT_CSS = r"""<style>
     justify-content: center; transition: background 0.2s;
   }
   .theme-toggle:hover { background: var(--bg-main); }
+  .theme-toggle .icon {
+    display: inline-block;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.2s ease;
+  }
+  .theme-toggle.rotating .icon {
+    transform: rotate(180deg) scale(0.85);
+  }
 
   /* ── Stats Grid (Cards) ───────────────────────────────────────── */
   .stats-grid {
@@ -272,12 +280,18 @@ REPORT_CSS = r"""<style>
     padding: 20px;
     border-radius: 16px;
     box-shadow: var(--shadow-card);
-    transition: transform 0.2s, opacity 0.2s;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.2s;
     position: relative;
     overflow: hidden;
   }
   .stat-item[data-filter] { cursor: pointer; }
-  .stat-item:hover { transform: translateY(-2px); }
+  .stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
+  }
+  :root.dark .stat-item:hover {
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.5);
+  }
 
   .stat-item::before {
     content: ''; position: absolute; left: 0;
@@ -309,7 +323,17 @@ REPORT_CSS = r"""<style>
     padding: 5px 12px; border-radius: 8px; font-size: 12px;
     font-weight: 700; display: inline-flex; justify-content: center;
     text-transform: uppercase; letter-spacing: 0.3px;
+    transition: box-shadow 0.2s ease;
   }
+  .p-crit:hover { box-shadow: 0 0 10px rgba(209, 52, 56, 0.4); }
+  .p-high:hover { box-shadow: 0 0 10px rgba(202, 80, 16, 0.4); }
+  .p-med:hover  { box-shadow: 0 0 10px rgba(252, 225, 0, 0.35); }
+  .p-low:hover  { box-shadow: 0 0 10px rgba(16, 124, 65, 0.4); }
+  .p-info:hover { box-shadow: 0 0 10px rgba(0, 120, 212, 0.4); }
+  .pill-rec:hover     { box-shadow: 0 0 10px rgba(16, 124, 65, 0.4); }
+  .pill-consider:hover{ box-shadow: 0 0 10px rgba(252, 225, 0, 0.35); }
+  .pill-no:hover      { box-shadow: 0 0 10px rgba(209, 52, 56, 0.4); }
+  .pill-clust:hover   { box-shadow: 0 0 10px rgba(0, 120, 212, 0.4); }
   .p-crit { background: var(--c-crit-bg); color: var(--c-crit-text); }
   .p-high { background: var(--c-high-bg); color: var(--c-high-text); }
   .p-med  { background: var(--c-med-bg);  color: var(--c-med-text); }
@@ -325,11 +349,11 @@ REPORT_CSS = r"""<style>
   /* ── Tab Panes ────────────────────────────────────────────────── */
   .tab-pane {
     display: none;
-    animation: slideUp 0.3s ease forwards;
+    animation: fadeSlideIn 0.2s ease forwards;
   }
   .tab-pane.active { display: block; }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
@@ -365,7 +389,16 @@ REPORT_CSS = r"""<style>
     color: var(--text-main);
   }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg-main); }
+  tbody tr {
+    transition: background 0.15s ease;
+  }
+  tbody tr:hover td {
+    background: var(--bg-main);
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+  tbody tr:hover td:first-child {
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
   .col-level { width: 90px; text-align: center; }
 
   /* ── Score bar (data clustering) ──────────────────────────────── */
@@ -415,6 +448,13 @@ REPORT_CSS = r"""<style>
     cursor: pointer; font-size: 11px; font-weight: 700;
     font-family: inherit; transition: all 0.2s; text-transform: uppercase;
     letter-spacing: 0.05em;
+    opacity: 0; pointer-events: none;
+  }
+  .sql-details summary:hover .copy-btn,
+  .sql-details[open] .copy-btn,
+  .ddl-details summary:hover .copy-btn,
+  .ddl-details[open] .copy-btn {
+    opacity: 1; pointer-events: auto;
   }
   .copy-btn:hover {
     background: var(--primary); color: white;
@@ -423,6 +463,7 @@ REPORT_CSS = r"""<style>
   .copy-btn.success {
     background: var(--c-low-bg); color: var(--c-low-text);
     border-color: var(--c-low-bg);
+    opacity: 1; pointer-events: auto;
   }
 
   /* ── DDL block (data clustering) ──────────────────────────────── */
@@ -545,10 +586,12 @@ document.addEventListener('DOMContentLoaded', function() {
       if (iconSpan) iconSpan.textContent = '\ud83c\udf19';
     }
     themeBtn.addEventListener('click', function() {
+      themeBtn.classList.add('rotating');
       root.classList.toggle('dark');
       var isDark = root.classList.contains('dark');
       try { localStorage.setItem('fwa-theme', isDark ? 'dark' : 'light'); } catch(e) {}
       if (iconSpan) iconSpan.textContent = isDark ? '\u2600\ufe0f' : '\ud83c\udf19';
+      setTimeout(function() { themeBtn.classList.remove('rotating'); }, 400);
     });
   }
 

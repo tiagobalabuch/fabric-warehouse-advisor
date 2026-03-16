@@ -223,7 +223,7 @@ def check_role_alignment(
                 ),
                 detail=(
                     f"DB roles: {roles_str}. "
-                    f"This user likely accesses the warehouse via "
+                    f"This user likely accesses the {config.item_label} via "
                     f"item sharing but holds elevated database "
                     f"privileges."
                 ),

@@ -209,7 +209,7 @@ def check_schema_permissions(
             object_name=warehouse,
             message="Unable to query sys.database_permissions.",
             detail=f"Query error: {exc}",
-            recommendation="Ensure the executing identity has VIEW DEFINITION on the warehouse.",
+            recommendation=f"Ensure the executing identity has VIEW DEFINITION on the {config.item_label}.",
         ))
         return findings
 

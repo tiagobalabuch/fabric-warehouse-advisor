@@ -99,7 +99,7 @@ def check_column_level_security(
             object_name=warehouse,
             message="Unable to query column permission metadata.",
             detail="The current user may lack VIEW DEFINITION permission.",
-            recommendation="Ensure the executing identity has VIEW DEFINITION on the warehouse.",
+            recommendation=f"Ensure the executing identity has VIEW DEFINITION on the {config.item_label}.",
         ))
         return findings
 

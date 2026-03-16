@@ -255,6 +255,15 @@ class SecurityCheckAdvisor:
         print(f"  Timestamp : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print()
 
+        # Resolve sql_endpoint_id → warehouse_id so all downstream
+        # check functions that use config.warehouse_id work for SQL
+        # Endpoints without changes.
+        if not cfg.warehouse_id and cfg.sql_endpoint_id:
+            cfg.warehouse_id = cfg.sql_endpoint_id
+
+        # Set user-facing label used in finding messages
+        cfg.item_label = "SQL endpoint" if cfg.sql_endpoint_id else "warehouse"
+
         # Verbose: show active configuration
         self._log_header("Configuration")
         self._log_kv("Tables filter", cfg.table_names or "(all)")
@@ -282,6 +291,7 @@ class SecurityCheckAdvisor:
         print("Phase 0: Detecting warehouse edition ...")
         edition, _ = detect_warehouse_edition(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id,
+            cfg.sql_endpoint_id,
         )
         print(f"  Edition: {edition}")
         _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
@@ -398,6 +408,7 @@ class SecurityCheckAdvisor:
                 )
 
         # Resolve warehouse_id from warehouse_name if needed
+        is_sql_endpoint = edition == "LakeWarehouse"
         resolved_warehouse_id = cfg.warehouse_id
         resolved_warehouse_info: dict | None = None
         needs_warehouse = (
@@ -406,26 +417,48 @@ class SecurityCheckAdvisor:
             or cfg.check_sensitivity_labels
         )
         if rest_client and cfg.workspace_id and not resolved_warehouse_id and needs_warehouse:
-            self._log("Resolving warehouse_id from warehouse_name ...")
-            try:
-                resolved_warehouse_info = (
-                    rest_client.resolve_warehouse(
-                        cfg.workspace_id, cfg.warehouse_name,
+            if is_sql_endpoint:
+                self._log("Resolving SQL endpoint from endpoint name ...")
+                try:
+                    resolved_warehouse_info = (
+                        rest_client.resolve_sql_endpoint(
+                            cfg.workspace_id, cfg.warehouse_name,
+                        )
                     )
-                )
-                if resolved_warehouse_info:
-                    resolved_warehouse_id = resolved_warehouse_info.get("id", "")
-                    self._log(
-                        f"  Resolved: {cfg.warehouse_name} → "
-                        f"{resolved_warehouse_id}"
+                    if resolved_warehouse_info:
+                        resolved_warehouse_id = resolved_warehouse_info.get("id", "")
+                        self._log(
+                            f"  Resolved (SQL Endpoint): {cfg.warehouse_name} → "
+                            f"{resolved_warehouse_id}"
+                        )
+                    else:
+                        self._log(
+                            f"  ⚠ SQL endpoint '{cfg.warehouse_name}' not "
+                            f"found in workspace {cfg.workspace_id}."
+                        )
+                except FabricRestError as exc:
+                    self._log(f"  ⚠ Could not resolve SQL endpoint: {exc}")
+            else:
+                self._log("Resolving warehouse_id from warehouse_name ...")
+                try:
+                    resolved_warehouse_info = (
+                        rest_client.resolve_warehouse(
+                            cfg.workspace_id, cfg.warehouse_name,
+                        )
                     )
-                else:
-                    self._log(
-                        f"  ⚠ Warehouse '{cfg.warehouse_name}' not "
-                        f"found in workspace {cfg.workspace_id}."
-                    )
-            except FabricRestError as exc:
-                self._log(f"  ⚠ Could not resolve warehouse_id: {exc}")
+                    if resolved_warehouse_info:
+                        resolved_warehouse_id = resolved_warehouse_info.get("id", "")
+                        self._log(
+                            f"  Resolved: {cfg.warehouse_name} → "
+                            f"{resolved_warehouse_id}"
+                        )
+                    else:
+                        self._log(
+                            f"  ⚠ Warehouse '{cfg.warehouse_name}' not "
+                            f"found in workspace {cfg.workspace_id}."
+                        )
+                except FabricRestError as exc:
+                    self._log(f"  ⚠ Could not resolve warehouse_id: {exc}")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -493,7 +526,7 @@ class SecurityCheckAdvisor:
             findings, elapsed = self._run_phase(
                 "Phase 8: Analysing SQL audit settings",
                 check_sql_audit, rest_client, cfg.workspace_id,
-                resolved_warehouse_id, cfg,
+                resolved_warehouse_id, cfg, is_sql_endpoint,
             )
             all_findings.extend(findings)
             _phase_timings["Phase 8: SQL Audit Settings"] = elapsed
@@ -525,6 +558,7 @@ class SecurityCheckAdvisor:
                 "Phase 9: Analysing item permissions (Admin API)",
                 check_item_permissions, rest_client, cfg.workspace_id,
                 resolved_warehouse_id, cfg, ws_principal_roles,
+                is_sql_endpoint,
             )
             all_findings.extend(findings)
             _phase_timings["Phase 9: Item Permissions"] = elapsed
@@ -542,18 +576,25 @@ class SecurityCheckAdvisor:
 
         # ================================================================
         # Phase 10: Sensitivity Labels (SEC-010) — from list_warehouses
+        #           or list_sql_endpoints (LakeWarehouse edition)
         # ================================================================
         if cfg.check_sensitivity_labels and rest_client and cfg.workspace_id:
             wh_info = resolved_warehouse_info
             # If warehouse_id was provided manually (not resolved via
-            # list_warehouses), we lack the sensitivityLabel field.
-            # Attempt a fresh resolution; fall back to a minimal dict
-            # which will cause the check to report "no label found."
+            # list_warehouses / list_sql_endpoints), we lack the
+            # sensitivityLabel field.  Attempt a fresh resolution;
+            # fall back to a minimal dict which will cause the check
+            # to report "no label found."
             if not wh_info and resolved_warehouse_id:
                 try:
-                    wh_info = rest_client.resolve_warehouse(
-                        cfg.workspace_id, cfg.warehouse_name,
-                    )
+                    if is_sql_endpoint:
+                        wh_info = rest_client.resolve_sql_endpoint(
+                            cfg.workspace_id, cfg.warehouse_name,
+                        )
+                    else:
+                        wh_info = rest_client.resolve_warehouse(
+                            cfg.workspace_id, cfg.warehouse_name,
+                        )
                 except FabricRestError:
                     pass
             if not wh_info and resolved_warehouse_id:

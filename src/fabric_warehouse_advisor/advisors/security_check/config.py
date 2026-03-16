@@ -31,6 +31,13 @@ class SecurityCheckConfig:
         Optional.  The Fabric Warehouse item ID (GUID).
         For cross-workspace access together with ``workspace_id``.
 
+    sql_endpoint_id : str
+        Optional.  The Fabric SQL Analytics Endpoint item ID (GUID).
+        Used when connecting to a Lakehouse SQL Endpoint instead of a
+        Data Warehouse.  If ``warehouse_id`` is empty and this is set,
+        it will be used as the warehouse identifier for cross-workspace
+        connections.
+
     check_schema_permissions : bool
         Enable the schema-level permissions check (SEC-001).
 
@@ -94,6 +101,10 @@ class SecurityCheckConfig:
     warehouse_name: str = ""
     workspace_id: str = ""
     warehouse_id: str = ""
+    sql_endpoint_id: str = ""
+
+    # -- Derived label (set by advisor based on detected edition) --
+    item_label: str = "warehouse"
 
     # -- REST API auth --
     fabric_token: str = ""

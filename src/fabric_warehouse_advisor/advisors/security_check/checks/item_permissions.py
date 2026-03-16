@@ -51,8 +51,9 @@ def check_item_permissions(
     warehouse_id: str,
     config: SecurityCheckConfig,
     workspace_role_principals: Dict[str, str] | None = None,
+    is_sql_endpoint: bool = False,
 ) -> List[Finding]:
-    """Analyse item-level permissions for a warehouse.
+    """Analyse item-level permissions for a warehouse or SQL endpoint.
 
     Parameters
     ----------
@@ -61,13 +62,16 @@ def check_item_permissions(
     workspace_id : str
         Target workspace ID.
     warehouse_id : str
-        Target warehouse item ID.
+        Target warehouse / SQL endpoint item ID.
     config : SecurityCheckConfig
         Advisor configuration.
     workspace_role_principals : dict[str, str] | None
         Optional mapping of ``principal_id → workspace_role``
         (e.g. ``{"<guid>": "Admin"}``).  Used to detect
         item-level Write grants that duplicate workspace roles.
+    is_sql_endpoint : bool
+        If *True*, query the Admin API with ``type=SQLEndpoint``
+        instead of ``type=Warehouse``.
 
     Returns
     -------
@@ -76,11 +80,13 @@ def check_item_permissions(
     """
     findings: List[Finding] = []
     ws_principals = workspace_role_principals or {}
+    item = config.item_label
 
     # ── Fetch item access details via Admin API ──────────────────
     try:
+        item_type = "SQLEndpoint" if is_sql_endpoint else "Warehouse"
         access_details = rest_client.list_item_access_details(
-            workspace_id, warehouse_id,
+            workspace_id, warehouse_id, item_type=item_type,
         )
     except FabricRestError as exc:
         if exc.status_code in (401, 403):
@@ -160,8 +166,8 @@ def check_item_permissions(
                 check_name="entire_tenant_item_access",
                 object_name=warehouse_id,
                 message=(
-                    "Entire tenant has item-level access to the "
-                    "warehouse."
+                    f"Entire tenant has item-level access to the "
+                    f"{item}."
                 ),
                 detail=(
                     f"The '{display_name}' principal grants item "
@@ -253,7 +259,7 @@ def check_item_permissions(
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="item_permissions_summary",
             object_name=warehouse_id,
-            message=f"Item access summary for warehouse.",
+            message=f"Item access summary for {item}.",
             detail=(
                 f"{len(all_principals)} principal(s) with item access. "
                 f"ReadData: {len(read_data_principals)}, "

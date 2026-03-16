@@ -484,6 +484,64 @@ class FabricRestClient:
         )
         return self.get(url)
 
+    # ── SQL Endpoint APIs ─────────────────────────────────────────
+
+    def list_sql_endpoints(
+        self,
+        workspace_id: str,
+    ) -> List[Dict[str, Any]]:
+        """List all SQL endpoints in a workspace (paginated).
+
+        ``GET /v1/workspaces/{workspaceId}/sqlEndpoints``
+
+        Requires **Viewer** or higher workspace role.
+        """
+        url = f"{_FABRIC_API_BASE}/workspaces/{workspace_id}/sqlEndpoints"
+        return self.get_paginated(url)
+
+    def resolve_sql_endpoint(
+        self,
+        workspace_id: str,
+        endpoint_name: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Resolve a SQL endpoint display name to its full API object.
+
+        Calls :meth:`list_sql_endpoints` and matches by
+        ``displayName`` (case-insensitive).  Returns the entire dict
+        (including ``sensitivityLabel``, ``id``, ``displayName``, etc.)
+        or ``None`` if no match is found.
+        """
+        endpoints = self.list_sql_endpoints(workspace_id)
+        name_lower = endpoint_name.lower()
+        for ep in endpoints:
+            if ep.get("displayName", "").lower() == name_lower:
+                return ep
+        return None
+
+    def get_sql_endpoint_audit_settings(
+        self,
+        workspace_id: str,
+        item_id: str,
+    ) -> Dict[str, Any]:
+        """Retrieve SQL audit settings for a SQL endpoint.
+
+        ``GET /v1/workspaces/{workspaceId}/sqlEndpoints/{itemId}/settings/sqlAudit``
+
+        Requires **Reader** or higher item permission.
+
+        Returns
+        -------
+        dict
+            Keys: ``state`` ("Enabled"/"Disabled"),
+            ``retentionDays`` (int, 0 = indefinite),
+            ``auditActionsAndGroups`` (list[str]).
+        """
+        url = (
+            f"{_FABRIC_API_BASE}/workspaces/{workspace_id}"
+            f"/sqlEndpoints/{item_id}/settings/sqlAudit"
+        )
+        return self.get(url)
+
     def list_item_access_details(
         self,
         workspace_id: str,
