@@ -17,44 +17,13 @@ It runs entirely inside a **Fabric Notebook**. The Microsoft Fabric Data Warehou
 
 ## Installation
 
-### Option A: Install directly from PyPI (Recommended)
+To install Fabric Warehouse Advisor, run:
 
 ```python
 %pip install fabric-warehouse-advisor
 ```
 
-For version information, dependencies, and release notes, see the [details](https://pypi.org/project/fabric-warehouse-advisor/).
-
-### Option B: Download Pre-Built Wheel
-
-Download the latest `.whl` file from
-[**GitHub Releases**](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/latest),
-then install it in your Fabric notebook:
-
-```python
-%pip install /lakehouse/default/Files/fabric_warehouse_advisor-1.0.3-py3-none-any.whl
-```
-
-### Option C: Build from Source
-
-```bash
-pip install build
-python -m build          # produces dist/fabric_warehouse_advisor-1.0.3-py3-none-any.whl
-```
-
-### Install in Fabric
-
-### Option A: Install directly from PyPI (Recommended)
-
-```python
-%pip install fabric-warehouse-advisor
-```
-
-### Option B: Upload the Pre-Built Wheel
-
-Upload the `.whl` file to your Lakehouse **Files** area and use `%pip install`, or attach it via a Fabric **Environment** resource so it's pre-installed on every Spark session.
-
-See [Getting Started](docs/getting-started.md) for detailed instructions.
+For version information, dependencies, and release notes, see the [details](https://github.com/tiagobalabuch/fabric-warehouse-advisor/blob/master/CHANGELOG.md).
 
 ## Quick Start
 
@@ -104,46 +73,46 @@ result = advisor.run()
 displayHTML(result.html_report)
 ```
 
-## How It Works
+## Screenshots
 
-The advisor runs **7 phases** — all using T-SQL passthrough (no data
-transferred to Spark):
+Each advisor produces a rich, interactive HTML report with light and dark themes.
 
-| Phase | What it does |
-|-------|-------------|
-| 1. **Metadata** | Reads `sys.tables`, `sys.columns`, `sys.types` |
-| 2. **Clustering** | Reads `sys.indexes` / `sys.index_columns` for current `CLUSTER BY` |
-| 3. **Row Counts** | `COUNT_BIG(*)` per table; filters small tables |
-| 4. **Query Patterns** | Reads `queryinsights.frequently_run_queries` |
-| 5. **Predicates** | Regex extraction of WHERE-clause columns |
-| 6. **Cardinality** | `APPROX_COUNT_DISTINCT()` pushed down to SQL engine |
-| 7. **Scoring** | 0–100 composite score with cardinality penalties |
+### Data Clustering
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/data-clustering-light.png" alt="Data Clustering - Light" width="49%">
+  
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/data-clustering-dark.png" alt="Data Clustering - Dark" width="49%">
+</p>
+
+### Security Check
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/security-check-light.png" alt="Security Check - Light" width="49%">
+
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/security-check-dark.png" alt="Security Check - Dark" width="49%">
+</p>
+
+### Performance Check
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/performance-check-light.png" alt="Performance Check - Light" width="49%">
+  
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/performance-check-dark.png" alt="Performance Check - Dark" width="49%">
+</p>
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Getting Started](docs/getting-started.md) | Installation, first run, working with results |
-| [Advisors Overview](docs/advisors/index.md) | Comparison of all available advisors |
+| [Getting Started](https://tiagobalabuch.github.io/fabric-warehouse-advisor/getting-started/) | Installation, first run, working with results |
+| [Advisors Overview](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/) | Comparison of all available advisors |
 | **Data Clustering** | |
-| [DC — How It Works](docs/advisors/data-clustering/how-it-works.md) | 7-phase pipeline deep dive |
-| [DC — Configuration](docs/advisors/data-clustering/configuration.md) | Full parameter reference |
-| [DC — Scoring](docs/advisors/data-clustering/scoring.md) | Scoring formula, penalties, examples |
-| [DC — Reports](docs/advisors/data-clustering/reports.md) | Text, Markdown, and HTML output |
-| [DC — Data Type Reference](docs/advisors/data-clustering/data-type-reference.md) | Supported types |
+| [Overview](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/data-clustering/#documentation) | Analyzes query patterns, table metadata, and column cardinality to identify and score the best candidate columns for data clustering, optimizing physical data organization on OneLake for better query speed. |
 | **Performance Check** | |
-| [PC — How It Works](docs/advisors/performance-check/how-it-works.md) | 5-phase pipeline deep dive |
-| [PC — Configuration](docs/advisors/performance-check/configuration.md) | Full parameter reference |
-| [PC — Check Categories](docs/advisors/performance-check/checks.md) | All checks with severity and fixes |
-| [PC — Reports](docs/advisors/performance-check/reports.md) | Text, Markdown, and HTML output |
+| [Overview](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/performance-check/) | Identifies common performance pitfalls in Fabric Warehouses and Lakehouse SQL Endpoints by auditing data types, caching status, V-Order optimization, statistics health, and query performance regressions. |
 | **Security Check** | |
-| [SC — How It Works](docs/advisors/security-check/how-it-works.md) | 5-phase pipeline deep dive |
-| [SC — Configuration](docs/advisors/security-check/configuration.md) | Full parameter reference |
-| [SC — Check Categories](docs/advisors/security-check/checks.md) | All checks with severity and fixes |
-| [SC — Reports](docs/advisors/security-check/reports.md) | Text, Markdown, and HTML output |
-| **Shared** | |
-| [Cross-Workspace](docs/cross-workspace.md) | Analysing warehouses in other workspaces |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+| [Overview](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/security-check/) | Scans Microsoft Fabric Warehouses for security misconfigurations, covering schema permissions, custom roles, Row-Level Security (RLS), Column-Level Security (CLS), and Dynamic Data Masking to provide actionable findings and SQL fixes. |
 
 ## Acknowledgements
 
