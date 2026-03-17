@@ -3,13 +3,36 @@
 All notable changes to this project will be documented in this file.
 This file is automatically updated by the release workflow.
 
-## [v1.0.7](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.7)
+## [v1.1.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.1.3)
 
+- Merge pull request #18 from tiagobalabuch/feature/report-revamp
+- Refactor code structure for improved readability and maintainability
+- Update badge label logic to reflect correct warehouse edition in performance and security reports
+- Add exclusion clauses for schemas in query regression and statistics checks
+- Refactor edition label handling in security check reports for consistency and clarity
+- Revise README and documentation to remove package structure and add acknowledgements for icon sources
+- Update icon assets for data clustering and performance - Replaced dataclustering.png with an updated version. - Replaced performance.png with an updated version.
+- Add new icon images for data clustering, performance, search, and security
+- Refactor item label handling and update report generation for clarity
+- Enhance security checks for SQL endpoints and improve user-facing messages in findings
+- Revamp report templates and enhance HTML styling for improved clarity and aesthetics
+- Add shared HTML report template for Fabric Warehouse Advisor
+- Merge pull request #17 from tiagobalabuch/feature/security-checkV2
+- Enhance security checks and error handling in advisor modules
+- Refactor security check messages for clarity and consistency
+- Remove redundant debugging code from FabricRestClient
+- Merge pull request #16 from tiagobalabuch/feature/security-checkV1
+- Add security checks for role alignment, sensitivity labels, SQL audit settings, and workspace roles
+- Add Security Check Advisor with configuration, findings, and reporting
+- Merge pull request #15 from tiagobalabuch/tiagobalabuch-patch-1
+- Update issue templates
+- Merge pull request #14 from tiagobalabuch/changelog/v1.0.7
+- Merge branch 'master' into changelog/v1.0.7
+- Merge pull request #13 from tiagobalabuch/changelog/v1.0.6
+- Update CHANGELOG.md for v1.0.7
 - Bump version to 1.0.7 in pyproject.toml
 - Update installation instructions to remove version pinning and correct project URLs
-
-## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
-
+- Update CHANGELOG.md for v1.0.6
 - Merge pull request #12 from tiagobalabuch/refactoring/class-names
 - Merge pull request #11 from tiagobalabuch/changelog/v1.0.3
 - Refactor documentation: update section headings for clarity and consistency
@@ -68,76 +91,32 @@ This file is automatically updated by the release workflow.
 - Add in-repo documentation and GitHub Actions release workflow
 - Initial commit: Fabric Warehouse Data Clustering Advisor v0.2.0
 
-## [v1.0.6](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.6)
+## [v1.0.7](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.7)
 
-- Bump version to 1.0.6 in pyproject.toml
-- Update installation instructions to remove version pinning and correct project URLs
-
-## [v1.0.3](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.3)
-
-- Merge pull request #12 from tiagobalabuch/refactoring/class-names
-- Merge pull request #11 from tiagobalabuch/changelog/v1.0.3
-- Refactor documentation: update section headings for clarity and consistency
-- Refactor Data Clustering Advisor: rename configuration classes and update documentation references. Bump version to 1.0.6
-- Update installation instructions in README and getting-started documentation: clarify PyPI installation and reorganize options
-- Update CHANGELOG.md for v1.0.3
-
-## [v1.0.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v1.0.0)
-
-- Merge pull request #10 from tiagobalabuch/bug/smalfix
-- Bump version to 1.0.3 in pyproject.toml
-- Refactor Performance Check Advisor code: clarify data type checks, remove NVARCHAR warnings, and enhance warehouse edition detection logic. Reflected the changes in the documentation
-- Merge pull request #9 from tiagobalabuch/docs/v2-rewrite
-- Update documentation for Data Clustering and Performance Check advisors: fix formatting issues and clarify descriptions.
-- Update documentation for various advisors: clarify report printing behavior, enhance report format descriptions, and correct minor formatting issues.
-- Refactor documentation for advisors: remove unnecessary print statements, clarify row count drift description, and update links in the main index.
-- Refine documentation for Fabric Warehouse Advisor: correct "PySpark" to "Python". Enhance cross-workspace documentation by clarifying sql_endpoint_id usage and updating parameter requirements. Remove outdated troubleshooting section on proactive stats refresh check.
-- Update documentation for Performance Check and Data Clustering advisors, enhancing clarity on severity levels, access requirements, and report formats.
-- Merge pull request #8 from tiagobalabuch/changelog/v1.0.0
-- Update CHANGELOG.md for v1.0.0
-
-## [v0.3.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v0.3.0)
-
-- Merge pull request #7 from tiagobalabuch/feature/performance-advisor
-- Bump version to 1.0.0, update installation instructions, and enhance version loading with warnings for better user feedback
-- Enhance query regression checks to use window functions for median calculations and improve error handling in statistics health checks
-- Refactor performance check phases to improve logging and timing, and enhance SQL identifier handling in statistics checks
-- Update performance check documentation and version in pyproject.toml
-- Refactor performance check findings to introduce new severity levels and update related logic for caching, collation, data types, and query regression checks
-- Refactor table naming logic to enforce Warehouse identifier limits and enhance documentation for warehouse query functions with parameter details and retry logic
-- Enhance table naming in recommendations to respect Warehouse identifier limits and add automatic retry logic with exponential back-off for warehouse table reads
-- Update troubleshooting documentation to use placeholder for version in installation instructions
-- Improve error handling in warehouse query reading and enhance version loading fallback
-- Add query regression detection to Performance Check Advisor
-- Add core modules for Fabric Warehouse Advisor
-- Merge pull request #6 from tiagobalabuch/changelog/v0.3.0
-- Update CHANGELOG.md for v0.3.0
-
-## [v0.2.1](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v0.2.1)
-
-- Merge pull request #5 from tiagobalabuch/docs/readme-install-steps
-- Improve documentation clarity in installation and how it works guides
-- Update documentation for clarity and detail in usage and reports
-- Merge pull request #4 from tiagobalabuch/feature/log-phase-timing
-- Refactor phase timing variables for clarity in DataClusteringAdvisor
-- Update version to 0.3.0 and add timing for phases in DataClusteringAdvisor and row counting in warehouse_reader
-- Merge pull request #3 from tiagobalabuch/changelog/v0.2.1
-- Update CHANGELOG.md for v0.2.1
-- Base changelog branch on master to avoid workflows permission issue
-- Use force push for changelog branch
-- Handle existing changelog branch in release workflow
-
-## [v0.2.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v0.2.0)
-
-- Add pull-requests write permission to release workflow
-- Enhance release workflow to commit CHANGELOG.md and create a pull request for automated updates
-- Fix release workflow to push to default branch and update predicate parser documentation. Fixing the write version number
-- Merge pull request #2 from tiagobalabuch/DocumentationImprovements
-- Update version to 0.3.0, enhance release workflow with changelog generation, and remove hybrid predicate extraction strategy
-
-## [v0.1.0](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/tag/v0.1.0)
-
-- Bump version to 0.2.0 in pyproject.toml
-- Implement hybrid predicate extraction strategy using execution plans
-- Add MkDocs configuration and documentation files for project deployment
+- Merge pull request #18 from tiagobalabuch/feature/report-revamp
+- Refactor code structure for improved readability and maintainability
+- Update badge label logic to reflect correct warehouse edition in performance and security reports
+- Add exclusion clauses for schemas in query regression and statistics checks
+- Refactor edition label handling in security check reports for consistency and clarity
+- Revise README and documentation to remove package structure and add acknowledgements for icon sources
+- Update icon assets for data clustering and performance - Replaced dataclustering.png with an updated version. - Replaced performance.png with an updated version.
+- Add new icon images for data clustering, performance, search, and security
+- Refactor item label handling and update report generation for clarity
+- Enhance security checks for SQL endpoints and improve user-facing messages in findings
+- Revamp report templates and enhance HTML styling for improved clarity and aesthetics
+- Add shared HTML report template for Fabric Warehouse Advisor
+- Merge pull request #17 from tiagobalabuch/feature/security-checkV2
+- Enhance security checks and error handling in advisor modules
+- Refactor security check messages for clarity and consistency
+- Remove redundant debugging code from FabricRestClient
+- Merge pull request #16 from tiagobalabuch/feature/security-checkV1
+- Add security checks for role alignment, sensitivity labels, SQL audit settings, and workspace roles
+- Add Security Check Advisor with configuration, findings, and reporting
+- Merge pull request #15 from tiagobalabuch/tiagobalabuch-patch-1
+- Update issue templates
+- Merge pull request #14 from tiagobalabuch/changelog/v1.0.7
+- Merge branch 'master' into changelog/v1.0.7
+- Merge pull request #13 from tiagobalabuch/changelog/v1.0.6
+- Update CHANGELOG.md for v1.0.7
+- Update CHANGELOG.md for v1.0.6
 
