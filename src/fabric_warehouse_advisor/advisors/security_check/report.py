@@ -363,7 +363,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
                     f'<td>{esc(f0.message)}'
                 )
                 if f0.detail:
-                    h.append(f'<small>{esc(f0.detail)}</small>')
+                    h.append(f'<small>{esc(f0.detail).replace(chr(10), "<br>")}</small>')
                 h.append(
                     f'<details style="margin-top:8px">'
                     f'<summary>Show all {len(findings)} objects</summary><ul>'
@@ -371,7 +371,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
                 for f in findings:
                     h.append(f'<li><code>{esc(f.object_name)}</code></li>')
                 h.append('</ul></details></td>')
-                rec = esc(f0.recommendation) if f0.recommendation else ""
+                rec = esc(f0.recommendation).replace("\n", "<br>") if f0.recommendation else ""
                 all_sql = []
                 for f in findings:
                     if f.sql_fix and f.sql_fix not in all_sql:
@@ -390,9 +390,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
                         f'<td>{esc(f.message)}'
                     )
                     if f.detail:
-                        h.append(f'<small>{esc(f.detail)}</small>')
+                        h.append(f'<small>{esc(f.detail).replace(chr(10), "<br>")}</small>')
                     h.append('</td>')
-                    rec = esc(f.recommendation) if f.recommendation else ""
+                    rec = esc(f.recommendation).replace("\n", "<br>") if f.recommendation else ""
                     if f.sql_fix:
                         rec += render_sql_block(f.sql_fix)
                     h.append(f'<td>{rec}</td></tr>')

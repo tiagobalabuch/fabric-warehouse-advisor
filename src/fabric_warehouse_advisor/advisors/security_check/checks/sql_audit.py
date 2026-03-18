@@ -222,10 +222,10 @@ def check_sql_audit(
             # Entire category uncovered → HIGH
             # Fallback: if a future category has no recommended flag,
             # show the first 2 groups as a starting suggestion.
-            rec_list = ", ".join(
-                f"{g.description} ({g.name})"
+            rec_list = "\n".join(
+                f"• {g.description}"
                 for g in cat.groups if g.recommended
-            ) or ", ".join(g.name for g in cat.groups[:2])
+            ) or "\n".join(f"• {g.description}" for g in cat.groups[:2])
             findings.append(Finding(
                 level=LEVEL_HIGH,
                 category=CATEGORY_SQL_AUDIT,
@@ -241,7 +241,7 @@ def check_sql_audit(
                     f"will not be logged."
                 ),
                 recommendation=(
-                    f"Enable at least the recommended groups: {rec_list}."
+                    f"Enable at least the recommended groups:\n{rec_list}"
                 ),
             ))
             continue  # skip individual checks — whole category is missing
@@ -249,8 +249,8 @@ def check_sql_audit(
         # Individual recommended groups missing within partially-covered category
         missing_rec = cat_recommended - action_groups
         if missing_rec:
-            missing_detail = ", ".join(
-                f"{_GROUP_DESC.get(g, g)} ({g})"
+            missing_detail = "\n".join(
+                f"• {_GROUP_DESC.get(g, g)}"
                 for g in sorted(missing_rec)
             )
             findings.append(Finding(
@@ -262,7 +262,7 @@ def check_sql_audit(
                     f"{len(missing_rec)} recommended group(s) missing "
                     f"in '{cat.label}'."
                 ),
-                detail=f"Missing: {missing_detail}.",
+                detail=f"Missing:\n{missing_detail}",
                 recommendation=(
                     "Add the missing groups via the Fabric portal or "
                     "the Update SQL Audit Settings REST API."

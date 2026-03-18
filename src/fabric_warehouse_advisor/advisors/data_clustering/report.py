@@ -158,15 +158,21 @@ def generate_text_report(
 
         if rec.currently_clustered_columns:
             L.append(
-                f"  │  {_ICON_KEY} Current CLUSTER BY: "
+                f"  │  Current CLUSTER BY: "
                 f"{', '.join(rec.currently_clustered_columns)}"
             )
         else:
-            L.append(f"  │  {_ICON_KEY} Current CLUSTER BY: (none)")
+            L.append(f"  │  Current CLUSTER BY: (none)")
 
         if hasattr(rec, "warnings") and rec.warnings:
             for w in rec.warnings:
                 L.append(f"  │  {_ICON_WARN}  {w}")
+
+        if rec.cluster_by_ddl:
+            L.append("  │")
+            L.append(f"  │  SUGGESTED DDL (one CTAS per candidate):")
+            for ddl_line in rec.cluster_by_ddl.split("\n"):
+                L.append(f"  │     {ddl_line}")
 
         L.append("  │")
 
@@ -180,7 +186,6 @@ def generate_text_report(
         L.append(f"  │  {'─' * (len(hdr) - 5)}")
 
         for cs in rec.recommended_columns:
-            ci = _cardinality_icon(cs.cardinality_level)
             card_display = _cardinality_display(cs.cardinality_level)
             si = _score_emoji(cs.composite_score, min_score, cs.recommendation)
             distinct_str = (
@@ -196,17 +201,11 @@ def generate_text_report(
                 f"  │  {cs.column_name:<28} {_type_display(cs):<14} "
                 f"{cs.predicate_hits:>5} {distinct_str:>10} "
                 f"{ratio_str:>8} {pct_str:>7} "
-                f"{ci} {card_display:<10} "
+                f"{card_display:<10} "
                 f"{bar}  {si} {cs.recommendation}"
             )
             if cs.optimization_flag and cs.optimization_flag != "OK":
                 L.append(f"  │     {_ICON_WARN}  {cs.optimization_flag}")
-
-        if rec.cluster_by_ddl:
-            L.append("  │")
-            L.append(f"  │  {_ICON_BOLT} SUGGESTED DDL (one CTAS per candidate):")
-            for ddl_line in rec.cluster_by_ddl.split("\n"):
-                L.append(f"  │     {ddl_line}")
 
         L.append(f"  └{'─' * 74}")
 
@@ -307,16 +306,24 @@ def generate_markdown_report(
         md.append(f"| **Rows** | {rec.row_count:,} |")
         if rec.currently_clustered_columns:
             md.append(
-                f"| **{_ICON_KEY} Current CLUSTER BY** | "
+                f"| **Current CLUSTER BY** | "
                 f"`{', '.join(rec.currently_clustered_columns)}` |"
             )
         else:
-            md.append(f"| **{_ICON_KEY} Current CLUSTER BY** | _(none)_ |")
+            md.append(f"| **Current CLUSTER BY** | _(none)_ |")
         md.append("")
 
         if hasattr(rec, "warnings") and rec.warnings:
             for w in rec.warnings:
                 md.append(f"> {_ICON_WARN} {w}\n")
+
+        if rec.cluster_by_ddl:
+            md.append(
+                f"<details><summary><b>Suggested DDL "
+                f"(one CTAS per candidate)</b></summary>\n"
+            )
+            md.append(f"```sql\n{rec.cluster_by_ddl}\n```\n")
+            md.append("</details>\n")
 
         md.append(
             "| | Column | Type | Pred. Hits | Distinct "
@@ -327,7 +334,6 @@ def generate_markdown_report(
             "|------:|------:|------------|------:|----------------|"
         )
         for cs in rec.recommended_columns:
-            ci = _cardinality_icon(cs.cardinality_level)
             card_display = _cardinality_display(cs.cardinality_level)
             si = _score_emoji(cs.composite_score, min_score, cs.recommendation)
             distinct_str = (
@@ -345,19 +351,11 @@ def generate_markdown_report(
                 f"| {si} | `{cs.column_name}` | `{_type_display(cs)}` "
                 f"| {cs.predicate_hits} | {distinct_str} "
                 f"| {ratio_str} | {pct_str} "
-                f"| {ci} {card_display} "
+                f"| {card_display} "
                 f"| **{cs.composite_score}** "
                 f"| {cs.recommendation}{flag} |"
             )
         md.append("")
-
-        if rec.cluster_by_ddl:
-            md.append(
-                f"<details><summary>{_ICON_BOLT} <b>Suggested DDL "
-                f"(one CTAS per candidate)</b></summary>\n"
-            )
-            md.append(f"```sql\n{rec.cluster_by_ddl}\n```\n")
-            md.append("</details>\n")
 
         md.append("---\n")
 
@@ -433,6 +431,10 @@ def generate_html_report(
         esc, html_open, html_close, render_sidebar, render_main_open,
         render_info_stats, render_footer,
     )
+    from ...core.icon_data import ICON_WARNING, ICON_LIGHTBULB
+
+    _HTML_WARN = f'<img src="{ICON_WARNING}" width="20" height="20" alt="warning" style="vertical-align:middle">'
+    _HTML_BULB = f'<img src="{ICON_LIGHTBULB}" width="20" height="20" alt="tip" style="vertical-align:middle">'
 
     if captured_at is None:
         captured_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -497,12 +499,12 @@ def generate_html_report(
         if rec.currently_clustered_columns:
             cols_str = ", ".join(rec.currently_clustered_columns)
             h.append(
-                f'<span><strong>{_ICON_KEY} Current CLUSTER BY:</strong> '
+                f'<span><strong>Current CLUSTER BY:</strong> '
                 f'<code>{esc(cols_str)}</code></span>'
             )
         else:
             h.append(
-                f'<span><strong>{_ICON_KEY} Current CLUSTER BY:</strong> '
+                f'<span><strong>Current CLUSTER BY:</strong> '
                 '<em>(none)</em></span>'
             )
         h.append(
@@ -514,8 +516,17 @@ def generate_html_report(
             for w in rec.warnings:
                 h.append(
                     f'<div class="warn-box">'
-                    f'{_ICON_WARN} {_html.escape(w)}</div>'
+                    f'{_HTML_WARN} {_html.escape(w)}</div>'
                 )
+
+        # DDL block (before column table so it's visible without scrolling)
+        if rec.cluster_by_ddl:
+            h.append(
+                f'<details class="sql-details ddl-details">'
+                f'<summary>Suggested DDL (one CTAS per candidate)</summary>'
+                f'<div class="ddl-block">{_html.escape(rec.cluster_by_ddl)}</div>'
+                f'</details>'
+            )
 
         # Column score table
         h.append('<div class="table-container"><div class="table-scroll">')
@@ -555,7 +566,6 @@ def generate_html_report(
         h.append('<tbody>')
 
         for cs in rec.recommended_columns:
-            ci = _cardinality_icon(cs.cardinality_level)
             card_display = _cardinality_display(cs.cardinality_level)
             distinct_str = (
                 f"{cs.approx_distinct:,}" if cs.approx_distinct >= 0 else "N/A"
@@ -568,7 +578,7 @@ def generate_html_report(
             flag_html = ""
             if cs.optimization_flag and cs.optimization_flag != "OK":
                 flag_html = (
-                    f'<br><small>{_ICON_WARN} '
+                    f'<br><small>{_HTML_WARN} '
                     f'{_html.escape(cs.optimization_flag)}</small>'
                 )
             h.append(
@@ -579,22 +589,13 @@ def generate_html_report(
                 f'<td style="text-align:right">{distinct_str}</td>'
                 f'<td style="text-align:right">{ratio_str}</td>'
                 f'<td style="text-align:right">{pct_str}</td>'
-                f'<td>{ci} {card_display}</td>'
+                f'<td>{card_display}</td>'
                 f'<td>{_score_html_bar(cs.composite_score)}</td>'
                 f'<td>{_rec_pill(cs.recommendation)}{flag_html}</td>'
                 f'</tr>'
             )
         h.append('</tbody></table>')
         h.append('</div></div>')  # table-scroll + table-container
-
-        # DDL block
-        if rec.cluster_by_ddl:
-            h.append(
-                f'<details class="sql-details ddl-details">'
-                f'<summary>{_ICON_BOLT} Suggested DDL (one CTAS per candidate)</summary>'
-                f'<div class="ddl-block">{_html.escape(rec.cluster_by_ddl)}</div>'
-                f'</details>'
-            )
 
         h.append('</div>')  # tab-pane
 
@@ -604,7 +605,7 @@ def generate_html_report(
         h.append(f'<h2 class="print-title">All Suggested DDL (CTAS)</h2>')
         h.append(
             f'<div class="warn-box" style="border-left-color:var(--primary);">'
-            f'{_ICON_BULB} Fabric uses '
+            f'{_HTML_BULB} Fabric uses '
             '<code>CREATE TABLE ... AS SELECT</code> (CTAS) to apply data '
             'clustering. Each statement creates a <b>new</b> clustered '
             'table. Pick the column(s) that best suit your workload, then '
@@ -627,25 +628,25 @@ def generate_html_report(
     if not recommendations:
         h.append(
             '<div class="warn-box">'
-            '\u26a0\ufe0f No candidate columns met the scoring threshold. '
+            f'{_HTML_WARN} No candidate columns met the scoring threshold. '
             'Ensure Query Insights is enabled and queries with WHERE '
             'filters have been running.'
             '</div>'
         )
 
     tips_html = [
-        (_ICON_CHECK, "Data clustering is most effective on <b>large tables</b>."),
-        (_ICON_CHECK, "Choose columns with <b>mid-to-high cardinality</b> used in <code>WHERE</code> filters."),
-        (_ICON_BOLT, "Batch ingestion (&ge; 1 M rows per DML) for optimal clustering quality."),
-        (_ICON_CROSS, "Equality <code>JOIN</code> conditions do <b>NOT</b> benefit from data clustering."),
-        (_ICON_WARN, "Don't cluster on more columns than strictly necessary."),
-        (_ICON_GEAR, "Column order in <code>CLUSTER BY</code> does not affect how rows are stored."),
-        (_ICON_WARN, "For <code>char</code>/<code>varchar</code>, only the first 32 characters produce stats."),
-        (_ICON_WARN, "For <code>decimal</code> with precision &gt; 18, predicates won't push down."),
+        "Data clustering is most effective on <b>large tables</b>.",
+        "Choose columns with <b>mid-to-high cardinality</b> used in <code>WHERE</code> filters.",
+        "Batch ingestion (&ge; 1 M rows per DML) for optimal clustering quality.",
+        "Equality <code>JOIN</code> conditions do <b>NOT</b> benefit from data clustering.",
+        "Don't cluster on more columns than strictly necessary.",
+        "Column order in <code>CLUSTER BY</code> does not affect how rows are stored.",
+        "For <code>char</code>/<code>varchar</code>, only the first 32 characters produce stats.",
+        "For <code>decimal</code> with precision &gt; 18, predicates won't push down.",
     ]
     h.append('<div class="table-container"><div class="table-scroll"><table>')
-    for icon, tip in tips_html:
-        h.append(f'<tr><td style="text-align:center;width:36px">{icon}</td><td>{tip}</td></tr>')
+    for tip in tips_html:
+        h.append(f'<tr><td>{tip}</td></tr>')
     h.append('</table></div></div>')
     h.append('</div>')  # tab-pane
 
