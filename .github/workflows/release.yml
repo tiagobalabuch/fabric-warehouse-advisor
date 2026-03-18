@@ -64,6 +64,8 @@ jobs:
           prerelease: false
 
       - name: Generate CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "# Changelog" > CHANGELOG.md
           echo "" >> CHANGELOG.md
@@ -71,20 +73,77 @@ jobs:
           echo "This file is automatically updated by the release workflow." >> CHANGELOG.md
           echo "" >> CHANGELOG.md
 
-          TAGS=$(git tag --sort=-version:refname | grep '^v')
-          PREV=""
-          for TAG in $TAGS; do
-            echo "## [$TAG](https://github.com/${{ github.repository }}/releases/tag/$TAG)" >> CHANGELOG.md
+          REPO="${{ github.repository }}"
+          TAGS_ARRAY=($(git tag --sort=-version:refname | grep '^v'))
+
+          for i in "${!TAGS_ARRAY[@]}"; do
+            TAG="${TAGS_ARRAY[$i]}"
+            NEXT_TAG="${TAGS_ARRAY[$((i+1))]:-}"
+            TAG_DATE=$(git tag -l "$TAG" --format='%(creatordate:short)')
+
+            echo "## [$TAG](https://github.com/$REPO/releases/tag/$TAG) - $TAG_DATE" >> CHANGELOG.md
             echo "" >> CHANGELOG.md
-            if [ -n "$PREV" ]; then
-              RANGE="$TAG..$PREV"
+
+            if [ -n "$NEXT_TAG" ]; then
+              RANGE="$NEXT_TAG..$TAG"
             else
               RANGE="$TAG"
             fi
-            git log --pretty=format:"- %s" $RANGE >> CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            PREV=$TAG
+
+            # Temp files for each section
+            FEATURES=$(mktemp)
+            FIXES=$(mktemp)
+            DOCS=$(mktemp)
+            CHORE_FILE=$(mktemp)
+            OTHER=$(mktemp)
+
+            # Process first-parent commits (merge commits + direct pushes)
+            while IFS= read -r LINE; do
+              PR_NUM=$(echo "$LINE" | grep -oP 'Merge pull request #\K[0-9]+')
+
+              if [ -n "$PR_NUM" ]; then
+                PR_INFO=$(gh pr view "$PR_NUM" --repo "$REPO" --json title,labels 2>/dev/null || echo '{}')
+                PR_TITLE=$(echo "$PR_INFO" | jq -r '.title // empty' 2>/dev/null)
+                [ -z "$PR_TITLE" ] && PR_TITLE="$LINE"
+
+                SECTION="other"
+                for LABEL in $(echo "$PR_INFO" | jq -r '.labels[]?.name' 2>/dev/null); do
+                  case "$LABEL" in
+                    feature|enhancement) SECTION="features"; break ;;
+                    bug|fix) SECTION="fixes"; break ;;
+                    documentation) SECTION="docs"; break ;;
+                    chore) SECTION="chore"; break ;;
+                  esac
+                done
+
+                ENTRY="- $PR_TITLE ([#$PR_NUM](https://github.com/$REPO/pull/$PR_NUM))"
+                case "$SECTION" in
+                  features) echo "$ENTRY" >> "$FEATURES" ;;
+                  fixes) echo "$ENTRY" >> "$FIXES" ;;
+                  docs) echo "$ENTRY" >> "$DOCS" ;;
+                  chore) echo "$ENTRY" >> "$CHORE_FILE" ;;
+                  *) echo "$ENTRY" >> "$OTHER" ;;
+                esac
+              else
+                # Skip "Merge branch ..." commits
+                echo "$LINE" | grep -qP '^Merge branch' && continue
+                echo "- $LINE" >> "$OTHER"
+              fi
+            done < <(git log --first-parent --pretty=format:"%s" $RANGE)
+
+            # Write sections in order (only if non-empty)
+            for PAIR in "Features:$FEATURES" "Bug Fixes:$FIXES" "Documentation:$DOCS" "Chore:$CHORE_FILE" "Other Changes:$OTHER"; do
+              SECTION_NAME="${PAIR%%:*}"
+              FILE="${PAIR#*:}"
+              if [ -s "$FILE" ]; then
+                echo "### $SECTION_NAME" >> CHANGELOG.md
+                echo "" >> CHANGELOG.md
+                cat "$FILE" >> CHANGELOG.md
+                echo "" >> CHANGELOG.md
+              fi
+            done
+
+            rm -f "$FEATURES" "$FIXES" "$DOCS" "$CHORE_FILE" "$OTHER"
           done
 
       - name: Commit CHANGELOG.md and create PR

@@ -1,17 +1,16 @@
 # Fabric Warehouse Advisor
-
+ 
 A modular Python **advisory framework** for **Microsoft Fabric Warehouse**.
 Each advisor module analyses a different aspect of warehouse health and
 produces scored recommendations with rich reports.
 
-**Available Advisors:**
-
-* **Data Clustering Advisor** — assesses which tables and columns should use
-  Data Clustering (scored 0–100).
-* **Performance Check Advisor** — scans for data-type anti-patterns, caching
-  misconfigurations, stale statistics, and V-Order issues (findings-based).
-* **Security Check Advisor** — analyses permissions, roles, RLS, CLS, and
-  Dynamic Data Masking configuration (findings-based).
+  ## Available Advisors
+  
+  | Advisor | What it does | Output |
+  |---------|-------------|--------|
+  | [**Data Clustering**](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/data-clustering/) | Recommends which tables and columns should use `CLUSTER BY` | Scored recommendations (0–100) with CTAS DDL |
+  | [**Performance Check**](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/performance-check/) | Detects data-type, query regression, caching misconfigurations, V-Order status, and statistics health problems | Findings (Critical / Warning / Info) |
+  | [**Security Check**](https://tiagobalabuch.github.io/fabric-warehouse-advisor/advisors/security-check/) | Analyses permissions, roles, RLS, CLS, and Dynamic Data Masking configuration | Findings (Critical / High / Medium / Low / Info) |
 
 It runs entirely inside a **Fabric Notebook**. The Microsoft Fabric Data Warehouse connector comes pre-installed in the Fabric runtime, and Query Insights is enabled by default on every warehouse. A Lakehouse is required only when the solution is installed from a wheel file stored in OneLake.
 

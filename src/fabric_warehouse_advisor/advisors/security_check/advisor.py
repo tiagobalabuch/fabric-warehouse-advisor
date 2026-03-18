@@ -285,8 +285,10 @@ class SecurityCheckAdvisor:
             cfg.sql_endpoint_id,
         )
         all_findings.extend(edition_findings)
-        print(f"  Edition: {edition}")
+        self._log(f"  Edition: {edition}")
         _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
+        self._log(f"  \u23f1 Phase 0 completed in {_phase_timings['Phase 0: Edition detection']:.2f}s")
+        self._log_findings_detail(edition_findings)
 
         # Set user-facing item label based on detected edition
         if edition == "LakeWarehouse" or cfg.sql_endpoint_id:
@@ -398,7 +400,7 @@ class SecurityCheckAdvisor:
             auto_ws = FabricRestClient.get_current_workspace_id(spark)
             if auto_ws:
                 cfg.workspace_id = auto_ws
-                print(f"  ℹ Auto-detected workspace_id: {auto_ws}")
+                self._log(f"  Auto-detected workspace_id: {auto_ws}")
             else:
                 print(
                     "  ℹ workspace_id not set and could not be auto-detected.\n"
@@ -654,25 +656,16 @@ class SecurityCheckAdvisor:
 
         _total_elapsed = time.perf_counter() - _run_start
 
-        # Print summary
-        print()
-        print("═" * 52)
-        print(f"  SUMMARY")
-        print(f"  CRITICAL  : {summary.critical_count}")
-        print(f"  HIGH      : {summary.high_count}")
-        print(f"  MEDIUM    : {summary.medium_count}")
-        print(f"  LOW       : {summary.low_count}")
-        print(f"  INFO      : {summary.info_count}")
-        print(f"  Total     : {len(all_findings)} findings")
-        print("═" * 52)
-        print()
-
         # Phase timings (verbose only)
         if cfg.verbose:
             self._log("Phase Timings:")
             for phase, elapsed in _phase_timings.items():
                 self._log(f"  {phase:<40} {elapsed:.2f}s")
             self._log(f"  {'Total':<40} {_total_elapsed:.2f}s")
+
+        print("\n\u2713 Security Check Advisor completed successfully.")
+        print("  Use  displayHTML(result.html_report)  for a rich HTML view.")
+        print("  Use  result.save('path.html')  to save the report to a file.")
 
         return SecurityCheckResult(
             findings=all_findings,

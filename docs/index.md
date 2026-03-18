@@ -52,6 +52,34 @@ sc_result = SecurityCheckAdvisor(spark, sc_config).run()
 displayHTML(sc_result.html_report)
 ```
 
+## Screenshots
+
+Each advisor produces a rich, interactive HTML report with light and dark themes.
+
+### Data Clustering
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/data-clustering-light.png" alt="Data Clustering - Light" width="49%">
+  
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/data-clustering-dark.png" alt="Data Clustering - Dark" width="49%">
+</p>
+
+### Security Check
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/security-check-light.png" alt="Security Check - Light" width="49%">
+
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/security-check-dark.png" alt="Security Check - Dark" width="49%">
+</p>
+
+### Performance Check
+
+<p>
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/performance-check-light.png" alt="Performance Check - Light" width="49%">
+  
+  <img src="https://raw.githubusercontent.com/tiagobalabuch/fabric-warehouse-advisor/master/docs/assets/screenshots/performance-check-dark.png" alt="Performance Check - Dark" width="49%">
+</p>
+
 ## Documentation
 
 | Document | Description |

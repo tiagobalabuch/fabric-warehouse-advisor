@@ -178,6 +178,24 @@ class DataClusteringAdvisor:
             pad = ' ' * indent
             print(f"{pad}{key:<30}: {value}")
 
+    def _log_findings_detail(self, findings) -> None:
+        """Print per-finding detail when verbose is enabled."""
+        if not self.config.verbose or not findings:
+            return
+        self._log_header("Findings Detail")
+        for f in findings:
+            icon = {"CRITICAL": "❌", "HIGH": "🔴", "MEDIUM": "🟠", "LOW": "🟡", "INFO": "✅"}.get(f.level, "•")
+            self._log(f"    {icon} [{f.level}] {f.object_name}")
+            self._log(f"       Check : {f.check_name}")
+            self._log(f"       Msg   : {f.message}")
+            if f.detail:
+                self._log(f"       Detail: {f.detail}")
+            if f.recommendation:
+                self._log(f"       Rec   : {f.recommendation}")
+            if f.sql_fix:
+                self._log(f"       SQL   : {f.sql_fix}")
+        self._log_footer()
+
     @staticmethod
     def _parse_table_names(table_names: list[str]) -> set[tuple[str, str]]:
         """Parse user-supplied table names into (schema_lower, table_lower) pairs.
@@ -233,18 +251,32 @@ class DataClusteringAdvisor:
         print(f"  Timestamp : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print()
 
+        # Verbose: show active configuration
+        self._log_header("Configuration")
+        self._log_kv("Tables filter", cfg.table_names or "(all)")
+        self._log_kv("min_row_count", f"{cfg.min_row_count:,}")
+        self._log_kv("large_table_rows", f"{cfg.large_table_rows:,}")
+        self._log_kv("min_predicate_hits", cfg.min_predicate_hits)
+        self._log_kv("min_query_runs", cfg.min_query_runs)
+        self._log_kv("max_clustering_columns", cfg.max_clustering_columns)
+        self._log_kv("min_recommendation_score", cfg.min_recommendation_score)
+        self._log_kv("cardinality_sample_fraction", cfg.cardinality_sample_fraction)
+        self._log_kv("generate_ctas", cfg.generate_ctas)
+        self._log_footer()
+
         _run_start = time.perf_counter()
         _phase_timings: Dict[str, float] = {}
 
         # ---- Phase 0: Edition gate ----
         _phase_start = time.perf_counter()
         print("Phase 0: Detecting warehouse edition ...")
-        edition, _ = detect_warehouse_edition(
+        edition, edition_findings = detect_warehouse_edition(
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id,
         )
         self._log(f"  Edition: {edition}")
         _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
         self._log(f"  \u23f1 Phase 0 completed in {_phase_timings['Phase 0: Edition detection']:.2f}s")
+        self._log_findings_detail(edition_findings)
 
         if edition != "DataWarehouse":
             print(
