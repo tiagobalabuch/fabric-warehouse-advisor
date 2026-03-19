@@ -351,11 +351,11 @@ class SecurityCheckAdvisor:
                 )
                 _tbl_rows = _tbl_df.collect()
                 _matched = set()
+                _schema_filter = {x.lower() for x in cfg.schema_names} if cfg.schema_names else None
                 for r in _tbl_rows:
                     s, t = r["schema_name"], r["table_name"]
-                    if cfg.schema_names:
-                        if s.lower() not in [x.lower() for x in cfg.schema_names]:
-                            continue
+                    if _schema_filter and s.lower() not in _schema_filter:
+                        continue
                     if cfg.table_names:
                         qualified = f"{s}.{t}"
                         if not any(

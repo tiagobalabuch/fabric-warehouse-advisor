@@ -110,6 +110,9 @@ def check_collation(
     mismatch_count = 0
     columns_in_scope = 0
 
+    # Pre-compute scope filter
+    _schema_filter = {s.lower() for s in config.schema_names} if config.schema_names else None
+
     for row in col_rows:
         schema = row["schema_name"]
         table = row["table_name"]
@@ -117,9 +120,8 @@ def check_collation(
         col_collation = row["column_collation"]
 
         # Apply scope filters
-        if config.schema_names:
-            if schema.lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and schema.lower() not in _schema_filter:
+            continue
         if config.table_names:
             if not _matches_table_filter(schema, table, config.table_names):
                 continue

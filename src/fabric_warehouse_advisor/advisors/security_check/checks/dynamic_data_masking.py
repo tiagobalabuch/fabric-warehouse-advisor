@@ -138,15 +138,17 @@ def check_dynamic_data_masking(
     masked_count = 0
     sensitive_patterns = config.sensitive_column_patterns
 
+    # Pre-compute scope filter
+    _schema_filter = {s.lower() for s in config.schema_names} if config.schema_names else None
+
     for r in col_rows:
         schema = r["schema_name"]
         table = r["table_name"]
         col = r["column_name"]
 
         # Apply schema_names filter
-        if config.schema_names:
-            if schema.lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and schema.lower() not in _schema_filter:
+            continue
 
         # Apply table_names filter
         if config.table_names:

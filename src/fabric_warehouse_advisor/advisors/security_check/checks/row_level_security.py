@@ -97,14 +97,16 @@ def check_row_level_security(
         ))
         return findings
 
+    # Pre-compute scope filters
+    _schema_filter = {s.lower() for s in config.schema_names} if config.schema_names else None
+
     # Build set of all user tables
     all_tables: Set[Tuple[str, str]] = set()
     for r in table_rows:
         tbl = (r["schema_name"], r["table_name"])
         # Apply schema_names filter if configured
-        if config.schema_names:
-            if tbl[0].lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and tbl[0].lower() not in _schema_filter:
+            continue
         # Apply table_names filter if configured
         if config.table_names:
             qualified = f"{tbl[0]}.{tbl[1]}"
@@ -126,9 +128,8 @@ def check_row_level_security(
         pred_type = r["predicate_type_desc"]
 
         tbl_key = (schema, table)
-        if config.schema_names:
-            if schema.lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and schema.lower() not in _schema_filter:
+            continue
         if config.table_names and tbl_key not in all_tables:
             continue
 

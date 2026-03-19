@@ -122,20 +122,22 @@ def check_data_types(
     tables_seen: set = set()
     columns_count = 0
 
+    # Pre-compute scope filter
+    _schema_filter = {s.lower() for s in config.schema_names} if config.schema_names else None
+
     for row in rows:
         schema = row["TABLE_SCHEMA"]
         table = row["TABLE_NAME"]
         column = row["COLUMN_NAME"]
         data_type = (row["DATA_TYPE"] or "").strip().lower()
-        max_length = row["CHARACTER_MAXIMUM_LENGTH"]  # -1 for MAX
+        max_length = row["CHARACTER_MAXIMUM_LENGTH"]
         precision = row["NUMERIC_PRECISION"]
         scale = row["NUMERIC_SCALE"]
-        is_nullable = row["IS_NULLABLE"]  # "YES" or "NO"
+        is_nullable = row["IS_NULLABLE"]
 
         # Apply scope filters
-        if config.schema_names:
-            if schema.lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and schema.lower() not in _schema_filter:
+            continue
         if config.table_names:
             if not _matches_table_filter(schema, table, config.table_names):
                 continue

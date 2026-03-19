@@ -364,14 +364,17 @@ def _check_stats_health(
     now = datetime.now(timezone.utc)
 
     stats_by_table: dict = defaultdict(list)
+
+    # Pre-compute scope filter
+    _schema_filter = {s.lower() for s in config.schema_names} if config.schema_names else None
+
     for srow in stats_rows:
         schema = srow["schema_name"]
         table = srow["table_name"]
 
         # Apply scope filters
-        if config.schema_names:
-            if schema.lower() not in [s.lower() for s in config.schema_names]:
-                continue
+        if _schema_filter and schema.lower() not in _schema_filter:
+            continue
         if config.table_names:
             if not _matches_table_filter(schema, table, config.table_names):
                 continue
@@ -552,11 +555,11 @@ def _fetch_row_counts(
                 config.workspace_id, config.warehouse_id,
             ).collect()
             _filtered: List[Tuple[str, str]] = []
+            _schema_filter = {x.lower() for x in config.schema_names} if config.schema_names else None
             for r in _tbl_rows:
                 s, t = r["schema_name"], r["table_name"]
-                if config.schema_names:
-                    if s.lower() not in [x.lower() for x in config.schema_names]:
-                        continue
+                if _schema_filter and s.lower() not in _schema_filter:
+                    continue
                 if config.table_names:
                     if not _matches_table_filter(s, t, config.table_names):
                         continue
