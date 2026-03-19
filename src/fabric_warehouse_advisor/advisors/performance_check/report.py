@@ -256,6 +256,9 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         render_severity_stats, render_info_stats, severity_pill,
         render_sql_block, render_footer,
     )
+    from ...core.icon_data import ICON_WARNING
+
+    _HTML_WARN = f'<img src="{ICON_WARNING}" width="20" height="20" alt="warning" style="vertical-align:middle">'
 
     if captured_at is None:
         captured_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -332,7 +335,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         if cat in (CATEGORY_QUERY_REGRESSION, CATEGORY_VORDER):
             h.append(
                 '<div class="warn-box">'
-                '\u26a0\ufe0f This analysis runs warehouse-wide and is '
+                f'{_HTML_WARN} This analysis runs warehouse-wide and is '
                 'not filtered by schema/table selections.'
                 '</div>'
             )

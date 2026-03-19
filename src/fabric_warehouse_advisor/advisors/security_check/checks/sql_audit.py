@@ -51,31 +51,31 @@ _CATEGORIES: List[_AuditCategory] = [
             _AuditGroup("SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP", "User logged in", True),
             _AuditGroup("FAILED_DATABASE_AUTHENTICATION_GROUP", "User failed to log in", True),
             _AuditGroup("DATABASE_LOGOUT_GROUP", "User logged out", False),
-            _AuditGroup("DATABASE_ROLE_MEMBER_CHANGE_GROUP", "Role member was changed", True),
-            _AuditGroup("AUDIT_CHANGE_GROUP", "Audit was changed", True),
-            _AuditGroup("DATABASE_PRINCIPAL_IMPERSONATION_GROUP", "User was impersonated", True),
             _AuditGroup("DATABASE_PRINCIPAL_CHANGE_GROUP", "User was changed", True),
+            _AuditGroup("DATABASE_ROLE_MEMBER_CHANGE_GROUP", "Role member was changed", True),
+            _AuditGroup("DATABASE_PRINCIPAL_IMPERSONATION_GROUP", "User was impersonated", True),
+            _AuditGroup("AUDIT_CHANGE_GROUP", "Audit was changed", True),
         ],
     ),
     _AuditCategory(
         label="Data access and manipulation events",
         groups=[
-            _AuditGroup("DATABASE_OBJECT_ACCESS_GROUP", "Object was accessed", False),
             _AuditGroup("SCHEMA_OBJECT_ACCESS_GROUP", "Schema object permission was used", False),
-            _AuditGroup("BATCH_COMPLETED_GROUP", "Batch was completed", True),
+            _AuditGroup("DATABASE_OBJECT_ACCESS_GROUP", "Object was accessed", False),
             _AuditGroup("BATCH_STARTED_GROUP", "Batch was started", False),
+            _AuditGroup("BATCH_COMPLETED_GROUP", "Batch was completed", False),
         ],
     ),
     _AuditCategory(
         label="Administrative and configuration events",
         groups=[
-            _AuditGroup("DATABASE_OBJECT_PERMISSION_CHANGE_GROUP", "Object permission was changed", True),
             _AuditGroup("DATABASE_OBJECT_CHANGE_GROUP", "Object was changed", False),
             _AuditGroup("SCHEMA_OBJECT_CHANGE_GROUP", "Schema was changed", False),
-            _AuditGroup("SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP", "Schema object permission was checked", True),
-            _AuditGroup("DATABASE_OWNERSHIP_CHANGE_GROUP", "Owner changed", True),
+            _AuditGroup("DATABASE_OBJECT_PERMISSION_CHANGE_GROUP", "Object permission was changed", False),
+            _AuditGroup("SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP", "Schema object permission was changed", False),
+            _AuditGroup("DATABASE_OWNERSHIP_CHANGE_GROUP", "Owner changed", False),
             _AuditGroup("DATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP", "Object owner changed", False),
-            _AuditGroup("SCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP", "Schema object permission was changed", False),
+            _AuditGroup("SCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP", "Schema object owner changed", False),
         ],
     ),
 ]
@@ -222,10 +222,10 @@ def check_sql_audit(
             # Entire category uncovered → HIGH
             # Fallback: if a future category has no recommended flag,
             # show the first 2 groups as a starting suggestion.
-            rec_list = ", ".join(
-                f"{g.name} ({g.description})"
+            rec_list = "\n".join(
+                f"• {g.description}"
                 for g in cat.groups if g.recommended
-            ) or ", ".join(g.name for g in cat.groups[:2])
+            ) or "\n".join(f"• {g.description}" for g in cat.groups[:2])
             findings.append(Finding(
                 level=LEVEL_HIGH,
                 category=CATEGORY_SQL_AUDIT,
@@ -241,7 +241,7 @@ def check_sql_audit(
                     f"will not be logged."
                 ),
                 recommendation=(
-                    f"Enable at least the recommended groups: {rec_list}."
+                    f"Enable at least the recommended groups:\n{rec_list}"
                 ),
             ))
             continue  # skip individual checks — whole category is missing
@@ -249,8 +249,8 @@ def check_sql_audit(
         # Individual recommended groups missing within partially-covered category
         missing_rec = cat_recommended - action_groups
         if missing_rec:
-            missing_detail = ", ".join(
-                f"{g} ({_GROUP_DESC.get(g, '')})"
+            missing_detail = "\n".join(
+                f"• {_GROUP_DESC.get(g, g)}"
                 for g in sorted(missing_rec)
             )
             findings.append(Finding(
@@ -262,7 +262,7 @@ def check_sql_audit(
                     f"{len(missing_rec)} recommended group(s) missing "
                     f"in '{cat.label}'."
                 ),
-                detail=f"Missing: {missing_detail}.",
+                detail=f"Missing:\n{missing_detail}",
                 recommendation=(
                     "Add the missing groups via the Fabric portal or "
                     "the Update SQL Audit Settings REST API."
