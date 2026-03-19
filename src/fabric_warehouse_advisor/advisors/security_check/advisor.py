@@ -51,6 +51,7 @@ from .report import (
 from ...core.report import save_report
 from ...core.warehouse_reader import read_warehouse_query
 from ...core.fabric_rest_client import FabricRestClient, FabricRestError
+from ...core.scope_resolver import resolve_table_scope
 from ...core.phase_tracker import PhaseTracker, PhaseResult, PHASE_COMPLETED, PHASE_SKIPPED, PHASE_FAILED
 
 
@@ -298,56 +299,21 @@ class SecurityCheckAdvisor:
             time.sleep(cfg.phase_delay)
 
         # ================================================================
-        # Scope resolution: when schema_names or table_names are set,
-        # check whether any user tables actually match.  If none do,
-        # skip the table-scoped checks (RLS, CLS, DDM) to avoid
-        # unnecessary SQL round-trips.
+        # Scope resolution
         # ================================================================
         _any_table_checks = cfg.check_rls or cfg.check_cls or cfg.check_ddm
-        _has_scope_filter = bool(cfg.schema_names or cfg.table_names)
         _skip_table_checks = False
 
-        if _any_table_checks and _has_scope_filter:
-            _t0 = time.perf_counter()
-            try:
-                _tbl_df = read_warehouse_query(
-                    spark, cfg.warehouse_name,
-                    "SELECT SCHEMA_NAME(schema_id) AS schema_name, "
-                    "name AS table_name FROM sys.tables",
-                    cfg.workspace_id, cfg.warehouse_id,
-                )
-                _tbl_rows = _tbl_df.collect()
-                _matched = set()
-                _schema_filter = {x.lower() for x in cfg.schema_names} if cfg.schema_names else None
-                for r in _tbl_rows:
-                    s, t = r["schema_name"], r["table_name"]
-                    if _schema_filter and s.lower() not in _schema_filter:
-                        continue
-                    if cfg.table_names:
-                        qualified = f"{s}.{t}"
-                        if not any(
-                            x == t or x == qualified
-                            for x in cfg.table_names
-                        ):
-                            continue
-                    _matched.add((s, t))
-                if not _matched:
-                    _skip_table_checks = True
-                    scope_parts = []
-                    if cfg.schema_names:
-                        scope_parts.append(f"schema_names={cfg.schema_names}")
-                    if cfg.table_names:
-                        scope_parts.append(f"table_names={cfg.table_names}")
-                    scope_msg = ", ".join(scope_parts)
-                    print(
-                        f"  ℹ No tables match the configured scope ({scope_msg}).\n"
-                        f"    Skipping table-scoped checks (RLS, CLS, DDM)."
-                    )
-                else:
-                    self._log(f"  Scope resolved: {len(_matched)} table(s) match filters.")
-            except Exception:
-                pass  # If scope query fails, run the checks normally
-            self._log(f"  ⏱ Scope resolution in {time.perf_counter() - _t0:.2f}s")
+        if _any_table_checks:
+            scope = resolve_table_scope(
+                spark, cfg.warehouse_name,
+                cfg.schema_names, cfg.table_names,
+                check_labels="RLS, CLS, DDM",
+                workspace_id=cfg.workspace_id,
+                warehouse_id=cfg.warehouse_id,
+                log_fn=self._log,
+            )
+            _skip_table_checks = scope.skip
 
         # ================================================================
         # Phase 3: Row-Level Security (SEC-003)
