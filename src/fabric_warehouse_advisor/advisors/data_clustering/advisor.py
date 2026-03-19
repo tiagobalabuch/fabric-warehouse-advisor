@@ -303,7 +303,7 @@ class DataClusteringAdvisor:
         )
 
         # Apply schema_names filter
-        _schema_set = [s.lower() for s in cfg.schema_names] if cfg.schema_names else []
+        _schema_set = {s.lower() for s in cfg.schema_names} if cfg.schema_names else set()
         if _schema_set:
             full_metadata = full_metadata.filter(
                 F.lower(F.col("schema_name")).isin(_schema_set)

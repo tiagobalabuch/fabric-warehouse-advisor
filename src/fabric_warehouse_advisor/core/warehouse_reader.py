@@ -282,7 +282,7 @@ def get_table_row_counts(
     else:
         _table_list_query = (
             "SELECT SCHEMA_NAME(t.schema_id) AS schema_name, t.name AS table_name "
-            "FROM sys.tables t WHERE t.type = 'U'"
+            "FROM sys.tables t"
         )
         distinct_tables = [
             (row["schema_name"], row["table_name"])

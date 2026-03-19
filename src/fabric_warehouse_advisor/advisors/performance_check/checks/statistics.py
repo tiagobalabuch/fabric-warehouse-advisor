@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Dict, List, Tuple
 
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType
 
 from ....core.warehouse_reader import read_warehouse_query, get_table_row_counts
 from ..config import PerformanceCheckConfig
@@ -548,7 +549,7 @@ def _fetch_row_counts(
         if config.schema_names or config.table_names:
             _tbl_query = (
                 "SELECT SCHEMA_NAME(schema_id) AS schema_name, "
-                "name AS table_name FROM sys.tables WHERE type = 'U'"
+                "name AS table_name FROM sys.tables"
             )
             _tbl_rows = read_warehouse_query(
                 spark, warehouse, _tbl_query,
@@ -566,7 +567,6 @@ def _fetch_row_counts(
                 _filtered.append((s, t))
             if not _filtered:
                 return {}
-            from pyspark.sql.types import StructType, StructField, StringType
             _schema = StructType([
                 StructField("schema_name", StringType(), False),
                 StructField("table_name", StringType(), False),

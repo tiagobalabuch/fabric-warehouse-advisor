@@ -346,7 +346,7 @@ class SecurityCheckAdvisor:
                 _tbl_df = read_warehouse_query(
                     spark, cfg.warehouse_name,
                     "SELECT SCHEMA_NAME(schema_id) AS schema_name, "
-                    "name AS table_name FROM sys.objects WHERE type = 'U'",
+                    "name AS table_name FROM sys.tables",
                     cfg.workspace_id, cfg.warehouse_id,
                 )
                 _tbl_rows = _tbl_df.collect()
