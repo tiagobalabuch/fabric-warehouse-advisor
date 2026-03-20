@@ -58,6 +58,7 @@ from .report import (
 )
 from ...core.report import save_report
 from ..performance_check.checks.warehouse_type import detect_warehouse_edition
+from ...core.phase_tracker import PhaseTracker, PhaseResult
 
 
 # ------------------------------------------------------------------
@@ -266,7 +267,10 @@ class DataClusteringAdvisor:
         self._log_footer()
 
         _run_start = time.perf_counter()
-        _phase_timings: Dict[str, float] = {}
+        tracker = PhaseTracker(
+            log_fn=self._log,
+            log_findings_fn=self._log_findings_detail,
+        )
 
         # ---- Phase 0: Edition gate ----
         _phase_start = time.perf_counter()
@@ -275,8 +279,9 @@ class DataClusteringAdvisor:
             spark, cfg.warehouse_name, cfg.workspace_id, cfg.warehouse_id,
         )
         self._log(f"  Edition: {edition}")
-        _phase_timings["Phase 0: Edition detection"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 0 completed in {_phase_timings['Phase 0: Edition detection']:.2f}s")
+        _p0_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 0: Edition detection", elapsed=_p0_elapsed))
+        self._log(f"  \u23f1 Phase 0 completed in {_p0_elapsed:.2f}s")
         self._log_findings_detail(edition_findings)
 
         if edition != "DataWarehouse":
@@ -332,8 +337,9 @@ class DataClusteringAdvisor:
             _display(full_metadata)
             self._log_footer()
         full_metadata.cache()
-        _phase_timings["Phase 1: Metadata"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 1 completed in {_phase_timings['Phase 1: Metadata']:.2f}s")
+        _p1_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 1: Metadata", elapsed=_p1_elapsed))
+        self._log(f"  \u23f1 Phase 1 completed in {_p1_elapsed:.2f}s")
 
         # Early exit: if no tables match the scope filters, skip all
         # remaining phases (avoids unnecessary Spark/SQL round-trips).
@@ -431,8 +437,9 @@ class DataClusteringAdvisor:
                     )
 
         current_clustering.cache()
-        _phase_timings["Phase 2: Current clustering"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 2 completed in {_phase_timings['Phase 2: Current clustering']:.2f}s")
+        _p2_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 2: Current clustering", elapsed=_p2_elapsed))
+        self._log(f"  \u23f1 Phase 2 completed in {_p2_elapsed:.2f}s")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -451,8 +458,9 @@ class DataClusteringAdvisor:
             _display(row_counts.orderBy(F.desc("row_count")))
             self._log_footer()
         row_counts.cache()
-        _phase_timings["Phase 3: Row counts"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 3 completed in {_phase_timings['Phase 3: Row counts']:.2f}s")
+        _p3_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 3: Row counts", elapsed=_p3_elapsed))
+        self._log(f"  \u23f1 Phase 3 completed in {_p3_elapsed:.2f}s")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -527,8 +535,9 @@ class DataClusteringAdvisor:
                 self._log(f"    {sch}.{tbl:<38} {cnt:>12,}")
             self._log_footer()
 
-        _phase_timings["Phase 4: Query patterns"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 4 completed in {_phase_timings['Phase 4: Query patterns']:.2f}s")
+        _p4_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 4: Query patterns", elapsed=_p4_elapsed))
+        self._log(f"  \u23f1 Phase 4 completed in {_p4_elapsed:.2f}s")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -578,8 +587,9 @@ class DataClusteringAdvisor:
                 self._log(f"    {sch}.{tbl}.{col:<46} {hits:>8}")
             self._log_footer()
 
-        _phase_timings["Phase 5: Predicate columns"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 5 completed in {_phase_timings['Phase 5: Predicate columns']:.2f}s")
+        _p5_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 5: Predicate columns", elapsed=_p5_elapsed))
+        self._log(f"  \u23f1 Phase 5 completed in {_p5_elapsed:.2f}s")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -672,8 +682,9 @@ class DataClusteringAdvisor:
                 _batch_elapsed = time.perf_counter() - _batch_start
                 self._log(f"    \u23f1 {schema}.{table} batch in {_batch_elapsed:.2f}s")
         self._log(f"  Cardinality estimated for {len(cardinality_cache)} columns.")
-        _phase_timings["Phase 6: Cardinality"] = time.perf_counter() - _phase_start
-        self._log(f"  \u23f1 Phase 6 completed in {_phase_timings['Phase 6: Cardinality']:.2f}s")
+        _p6_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 6: Cardinality", elapsed=_p6_elapsed))
+        self._log(f"  \u23f1 Phase 6 completed in {_p6_elapsed:.2f}s")
 
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -743,31 +754,12 @@ class DataClusteringAdvisor:
             warehouse_name=cfg.warehouse_name,
         )
 
-        _phase_timings["Phase 7: Scoring & reports"] = time.perf_counter() - _phase_start
-        self._log(f"  ⏱ Phase 7 completed in {_phase_timings['Phase 7: Scoring & reports']:.2f}s")
+        _p7_elapsed = time.perf_counter() - _phase_start
+        tracker.record(PhaseResult(name="Phase 7: Scoring & reports", elapsed=_p7_elapsed))
+        self._log(f"  ⏱ Phase 7 completed in {_p7_elapsed:.2f}s")
 
         _total_elapsed = time.perf_counter() - _run_start
-        if cfg.verbose:
-            self._log("\n" + "═" * 60)
-            self._log("  ⏱ Timing Summary")
-            self._log("═" * 60)
-            phase_col_width = 35
-            elapsed_col_width = 8
-            pct_col_width = 7
-            for phase_name, elapsed in _phase_timings.items():
-                pct = (elapsed / _total_elapsed * 100) if _total_elapsed > 0 else 0
-                self._log(
-                    f"  {phase_name:<{phase_col_width}} "
-                    f"{elapsed:>{elapsed_col_width}.2f}s  ({pct:>5.1f}%)"
-                )
-            _separator = "─"
-            self._log(
-                f"  {_separator * phase_col_width} "
-                f"{_separator * elapsed_col_width}  "
-                f"{_separator * pct_col_width}"
-            )
-            self._log(f"  {'Total':<{phase_col_width}} {_total_elapsed:>{elapsed_col_width}.2f}s")
-            self._log("═" * 60)
+        tracker.print_summary(verbose=cfg.verbose, total_elapsed=_total_elapsed, show_pct=True)
 
         print("\n✓ Data Clustering Advisor completed successfully.")
         print("  Use  displayHTML(result.html_report)  for a rich HTML view.")
