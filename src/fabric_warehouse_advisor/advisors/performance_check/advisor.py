@@ -22,7 +22,6 @@ Usage
 from __future__ import annotations
 
 import time
-import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -282,7 +281,7 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         else:
-            print("Phase 1: Caching analysis — SKIPPED (disabled in config)")
+            print("Phase 1: Caching — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 1: Caching", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -298,7 +297,7 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         else:
-            print("Phase 2: V-Order check — SKIPPED (disabled in config)")
+            print("Phase 2: V-Order — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 2: V-Order", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -308,13 +307,13 @@ class PerformanceCheckAdvisor:
         # ================================================================
         if cfg.check_query_regression:
             pr = tracker.run_phase(
-                "Phase 3: Query regression",
+                "Phase 3: Query Regression",
                 check_query_regression, spark, cfg.warehouse_name, cfg,
             )
             all_findings.extend(pr.findings)
         else:
-            print("Phase 3: Query regression — SKIPPED (disabled in config)")
-            tracker.record(PhaseResult(name="Phase 3: Query regression", status=PHASE_SKIPPED, skip_reason="disabled in config"))
+            print("Phase 3: Query Regression — SKIPPED (disabled in config)")
+            tracker.record(PhaseResult(name="Phase 3: Query Regression", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
 
@@ -341,43 +340,31 @@ class PerformanceCheckAdvisor:
 
         # ================================================================
         # Phase 4: Data Type Analysis  (table-scoped)
-        #
-        # check_data_types returns (findings, tables, columns) so it
-        # cannot use the standard run_phase() that expects List[Finding].
         # ================================================================
         if cfg.check_data_types and not _skip_table_checks:
-            _t0 = time.perf_counter()
-            print("Phase 4: Data types ...")
-            try:
-                dt_findings, dt_tables, dt_columns = check_data_types(
-                    spark, cfg.warehouse_name, cfg,
+            def _check_data_types_wrapper(
+                _spark, _warehouse, _cfg,
+            ) -> List[Finding]:
+                nonlocal total_tables, total_columns
+                findings, tables, columns = check_data_types(
+                    _spark, _warehouse, _cfg,
                 )
-                all_findings.extend(dt_findings)
-                total_tables = max(total_tables, dt_tables)
-                total_columns = max(total_columns, dt_columns)
-                self._log(f"  Tables: {dt_tables} | Columns: {dt_columns}")
-                _ct = sum(1 for f in dt_findings if f.is_critical)
-                _ht = sum(1 for f in dt_findings if f.is_high)
-                _mt = sum(1 for f in dt_findings if f.is_medium)
-                _lt = sum(1 for f in dt_findings if f.is_low)
-                _it = sum(1 for f in dt_findings if f.is_info)
-                self._log(f"  Findings: {_ct} critical, {_ht} high, {_mt} medium, {_lt} low, {_it} info")
-                self._log_findings_detail(dt_findings)
-                _p4_elapsed = time.perf_counter() - _t0
-                tracker.record(PhaseResult(name="Phase 4: Data types", elapsed=_p4_elapsed, findings=dt_findings))
-                self._log(f"  ⏱ Phase 4 completed in {_p4_elapsed:.2f}s")
-            except Exception as exc:
-                _p4_elapsed = time.perf_counter() - _t0
-                _short = f"{type(exc).__name__}: {exc}"
-                print(f"  ⚠ Phase 4: Data types FAILED — {_short}")
-                self._log(f"  {traceback.format_exc()}")
-                tracker.record(PhaseResult(name="Phase 4: Data types", status=PHASE_FAILED, elapsed=_p4_elapsed, skip_reason=_short))
+                total_tables = max(total_tables, tables)
+                total_columns = max(total_columns, columns)
+                self._log(f"  Tables: {tables} | Columns: {columns}")
+                return findings
+
+            pr = tracker.run_phase(
+                "Phase 4: Data Types",
+                _check_data_types_wrapper, spark, cfg.warehouse_name, cfg,
+            )
+            all_findings.extend(pr.findings)
         elif not cfg.check_data_types:
-            print("Phase 4: Data type analysis — SKIPPED (disabled in config)")
-            tracker.record(PhaseResult(name="Phase 4: Data types", status=PHASE_SKIPPED, skip_reason="disabled in config"))
+            print("Phase 4: Data Types — SKIPPED (disabled in config)")
+            tracker.record(PhaseResult(name="Phase 4: Data Types", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         else:
-            print("Phase 4: Data type analysis — SKIPPED (no tables in scope)")
-            tracker.record(PhaseResult(name="Phase 4: Data types", status=PHASE_SKIPPED, skip_reason="no tables in scope"))
+            print("Phase 4: Data Types — SKIPPED (no tables in scope)")
+            tracker.record(PhaseResult(name="Phase 4: Data Types", status=PHASE_SKIPPED, skip_reason="no tables in scope"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
 
@@ -386,16 +373,16 @@ class PerformanceCheckAdvisor:
         #           warehouse-level config checks always run)
         # ================================================================
         if cfg.check_statistics:
+            _stats_note = "config only — no tables in scope" if _skip_table_checks else ""
             pr = tracker.run_phase(
                 "Phase 5: Statistics",
                 check_statistics, spark, cfg.warehouse_name, cfg,
+                note=_stats_note,
                 skip_table_checks=_skip_table_checks,
             )
             all_findings.extend(pr.findings)
-            if _skip_table_checks and pr.is_completed:
-                pr.note = "config only — no tables in scope"
         else:
-            print("Phase 5: Statistics health — SKIPPED (disabled in config)")
+            print("Phase 5: Statistics — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 5: Statistics", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -410,10 +397,10 @@ class PerformanceCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         elif not cfg.check_collation:
-            print("Phase 6: Collation check — SKIPPED (disabled in config)")
+            print("Phase 6: Collation — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 6: Collation", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         else:
-            print("Phase 6: Collation check — SKIPPED (no tables in scope)")
+            print("Phase 6: Collation — SKIPPED (no tables in scope)")
             tracker.record(PhaseResult(name="Phase 6: Collation", status=PHASE_SKIPPED, skip_reason="no tables in scope"))
 
         # ================================================================

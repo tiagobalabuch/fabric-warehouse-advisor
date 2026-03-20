@@ -154,6 +154,7 @@ class PhaseTracker:
         name: str,
         check_fn: Callable[..., List[Finding]],
         *args: object,
+        note: str = "",
         **kwargs: object,
     ) -> PhaseResult:
         """Execute *check_fn*, record the result, and return it.
@@ -170,6 +171,8 @@ class PhaseTracker:
             ``"Phase 1: Caching"``.
         check_fn : callable
             The check function.  Must return ``List[Finding]``.
+        note : str
+            Optional note stored on the :class:`PhaseResult`.
         *args, **kwargs
             Forwarded to *check_fn*.
 
@@ -211,12 +214,13 @@ class PhaseTracker:
         self._log_findings(findings)
 
         elapsed = time.perf_counter() - _t0
-        self._log(f"  ⏱ {phase_label.split(':')[0]} completed in {elapsed:.2f}s")
+        self._log(f"  ⏱ {name} completed in {elapsed:.2f}s")
 
         result = PhaseResult(
             name=name,
             elapsed=elapsed,
             findings=findings,
+            note=note,
         )
         self._phases.append(result)
         return result

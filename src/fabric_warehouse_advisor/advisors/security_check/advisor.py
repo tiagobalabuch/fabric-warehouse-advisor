@@ -277,7 +277,7 @@ class SecurityCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         else:
-            print("Phase 1: Schema permissions — SKIPPED (disabled in config)")
+            print("Phase 1: Schema Permissions — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 1: Schema Permissions", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -292,7 +292,7 @@ class SecurityCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         else:
-            print("Phase 2: Custom roles — SKIPPED (disabled in config)")
+            print("Phase 2: Custom Roles — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 2: Custom Roles", status=PHASE_SKIPPED, skip_reason="disabled in config"))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -491,7 +491,7 @@ class SecurityCheckAdvisor:
                 else "no REST token" if not rest_client
                 else "workspace_id not set"
             )
-            print(f"  ℹ Phase 6: Workspace roles — SKIPPED ({reason})")
+            print(f"  ℹ Phase 6: Workspace Roles — SKIPPED ({reason})")
             tracker.record(PhaseResult(name="Phase 6: Workspace Roles", status=PHASE_SKIPPED, skip_reason=reason))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -511,7 +511,7 @@ class SecurityCheckAdvisor:
                 else "no REST token" if not rest_client
                 else "workspace_id not set"
             )
-            print(f"  ℹ Phase 7: Network isolation — SKIPPED ({reason})")
+            print(f"  ℹ Phase 7: Network Isolation — SKIPPED ({reason})")
             tracker.record(PhaseResult(name="Phase 7: Network Isolation", status=PHASE_SKIPPED, skip_reason=reason))
         if cfg.phase_delay > 0:
             time.sleep(cfg.phase_delay)
@@ -533,7 +533,7 @@ class SecurityCheckAdvisor:
                 else "workspace_id not set" if not cfg.workspace_id
                 else "warehouse_id could not be resolved"
             )
-            print(f"  ℹ Phase 8: SQL audit settings — SKIPPED ({reason})")
+            print(f"  ℹ Phase 8: SQL Audit Settings — SKIPPED ({reason})")
             tracker.record(PhaseResult(name="Phase 8: SQL Audit Settings", status=PHASE_SKIPPED, skip_reason=reason))
 
         if cfg.phase_delay > 0:
@@ -565,7 +565,7 @@ class SecurityCheckAdvisor:
                 else "workspace_id not set" if not cfg.workspace_id
                 else "warehouse_id could not be resolved"
             )
-            print(f"  ℹ Phase 9: Item permissions — SKIPPED ({reason})")
+            print(f"  ℹ Phase 9: Item Permissions — SKIPPED ({reason})")
             tracker.record(PhaseResult(name="Phase 9: Item Permissions", status=PHASE_SKIPPED, skip_reason=reason))
 
         if cfg.phase_delay > 0:
@@ -604,7 +604,7 @@ class SecurityCheckAdvisor:
                 all_findings.extend(pr.findings)
             else:
                 print(
-                    "  ℹ Phase 10: Sensitivity labels — SKIPPED "
+                    "  ℹ Phase 10: Sensitivity Labels — SKIPPED "
                     "(warehouse could not be resolved)"
                 )
                 tracker.record(PhaseResult(name="Phase 10: Sensitivity Labels", status=PHASE_SKIPPED, skip_reason="warehouse could not be resolved"))
@@ -614,7 +614,7 @@ class SecurityCheckAdvisor:
                 else "no REST token" if not rest_client
                 else "workspace_id not set"
             )
-            print(f"  ℹ Phase 10: Sensitivity labels — SKIPPED ({reason})")
+            print(f"  ℹ Phase 10: Sensitivity Labels — SKIPPED ({reason})")
             tracker.record(PhaseResult(name="Phase 10: Sensitivity Labels", status=PHASE_SKIPPED, skip_reason=reason))
 
         if cfg.phase_delay > 0:
@@ -631,7 +631,7 @@ class SecurityCheckAdvisor:
             )
             all_findings.extend(pr.findings)
         else:
-            print("  ℹ Phase 11: Role alignment — SKIPPED (disabled in config)")
+            print("  ℹ Phase 11: Role Alignment — SKIPPED (disabled in config)")
             tracker.record(PhaseResult(name="Phase 11: Role Alignment", status=PHASE_SKIPPED, skip_reason="disabled in config"))
 
         # ================================================================
