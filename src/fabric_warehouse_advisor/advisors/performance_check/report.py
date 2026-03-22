@@ -40,13 +40,24 @@ _CATEGORY_LABELS = {
 }
 
 _CATEGORY_ORDER = [
-    CATEGORY_STATISTICS,
-    CATEGORY_DATA_TYPES,
+    # Query Performance
     CATEGORY_CACHING,
-    CATEGORY_VORDER,
+    CATEGORY_STATISTICS,
     CATEGORY_QUERY_REGRESSION,
+    # Storage & Layout
+    CATEGORY_VORDER,
+    CATEGORY_DATA_TYPES,
     CATEGORY_COLLATION,
 ]
+
+_CATEGORY_SECTIONS = {
+    CATEGORY_CACHING: "Query Performance",
+    CATEGORY_STATISTICS: "Query Performance",
+    CATEGORY_QUERY_REGRESSION: "Query Performance",
+    CATEGORY_VORDER: "Storage & Layout",
+    CATEGORY_DATA_TYPES: "Storage & Layout",
+    CATEGORY_COLLATION: "Storage & Layout",
+}
 
 _LEVEL_ICONS = {
     LEVEL_CRITICAL: "❌",
@@ -276,7 +287,17 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         if summary.findings_by_category(cat)
     ]
 
-    tabs = [(f"pane-{idx}", label) for idx, (_cat, label) in enumerate(active_cats)]
+    # Build tabs with section dividers for the sidebar
+    tabs: list = []
+    last_section = ""
+    pane_idx = 0
+    for cat, label in active_cats:
+        section = _CATEGORY_SECTIONS.get(cat, "")
+        if section and section != last_section:
+            tabs.append(section)  # plain string = section divider
+            last_section = section
+        tabs.append((f"pane-{pane_idx}", label))
+        pane_idx += 1
 
     # Determine badge label based on edition
     badge_label = "SQL Endpoint" if summary.warehouse_edition == "LakeWarehouse" else "Warehouse"

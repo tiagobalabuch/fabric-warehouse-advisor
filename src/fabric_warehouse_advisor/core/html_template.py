@@ -594,6 +594,60 @@ REPORT_CSS = r"""<style>
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   * { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 
+  /* ── Best Practices Cards ─────────────────────────────────────── */
+  .bp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 8px 0;
+  }
+  .bp-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .bp-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  :root.dark .bp-card:hover {
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .bp-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  }
+  .bp-card.do-card::before   { background: var(--c-low); }
+  .bp-card.dont-card::before { background: var(--c-crit); }
+  .bp-card.warn-card::before { background: var(--c-med); }
+  .bp-card.info-card::before { background: var(--primary); }
+  .bp-icon {
+    font-size: 24px; flex-shrink: 0;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+  }
+  .do-card .bp-icon   { background: var(--c-low-bg); color: var(--c-low); }
+  .dont-card .bp-icon { background: var(--c-crit-bg); color: var(--c-crit); }
+  .warn-card .bp-icon { background: var(--c-med-bg); color: var(--c-med); }
+  .info-card .bp-icon { background: var(--primary-light); color: var(--primary); }
+  .bp-content h4 {
+    margin: 0 0 8px 0; font-size: 15px; color: var(--text-main);
+  }
+  .bp-content ul {
+    margin: 0; padding-left: 20px;
+    color: var(--text-secondary); font-size: 13px; line-height: 1.6;
+  }
+  .bp-content li { margin-bottom: 6px; }
+  .bp-content li:last-child { margin-bottom: 0; }
+  .bp-content code { font-size: 11px; }
+
   /* ── Responsive ───────────────────────────────────────────────── */
   @media (max-width: 1024px) {
     .app-container { flex-direction: column; }
@@ -754,11 +808,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
       var pane = document.getElementById(btn.getAttribute('data-target'));
       if (!pane) return;
-      var rows = pane.querySelectorAll('tbody tr');
+      var tbody = pane.querySelector('tbody');
+      var el = btn.querySelector('.tab-count');
+      if (!tbody) {
+        // No table in this pane (e.g. Best Practices cards) — hide badge
+        if (el) el.style.display = 'none';
+        return;
+      }
+      var rows = tbody.querySelectorAll('tr');
       var visible = Array.from(rows).filter(function(r) {
         return r.style.display !== 'none';
       }).length;
-      var el = btn.querySelector('.tab-count');
       if (el) el.textContent = visible;
       btn.style.opacity =
         (visible === 0 && !btn.classList.contains('active')) ? '0.5' : '';
