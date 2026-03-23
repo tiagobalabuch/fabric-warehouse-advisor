@@ -383,7 +383,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
             '<thead><tr>'
             '<th class="col-level" data-sort="level">Level '
             '<span class="sort-icon">\u21C5</span></th>'
-            '<th data-sort="text">Object '
+            '<th data-sort="text" style="min-width:180px">Object '
             '<span class="sort-icon">\u21C5</span></th>'
             '<th data-sort="text">Rule '
             '<span class="sort-icon">\u21C5</span></th>'

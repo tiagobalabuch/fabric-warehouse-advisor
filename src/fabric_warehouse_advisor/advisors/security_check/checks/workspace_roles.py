@@ -32,6 +32,7 @@ def check_workspace_roles(
     rest_client: FabricRestClient,
     workspace_id: str,
     config: SecurityCheckConfig,
+    workspace_display_name: str = "",
 ) -> List[Finding]:
     """Analyse workspace role assignments.
 
@@ -43,6 +44,8 @@ def check_workspace_roles(
         Target workspace ID.
     config : SecurityCheckConfig
         Advisor configuration.
+    workspace_display_name : str
+        Human-readable workspace name for report display.
 
     Returns
     -------
@@ -50,6 +53,7 @@ def check_workspace_roles(
         Findings related to workspace role assignments.
     """
     findings: List[Finding] = []
+    obj_name = workspace_display_name or workspace_id
 
     try:
         assignments = rest_client.get_workspace_role_assignments(workspace_id)
@@ -58,7 +62,7 @@ def check_workspace_roles(
             level=LEVEL_LOW,
             category=CATEGORY_WORKSPACE_ROLES,
             check_name="workspace_roles_query_failed",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Unable to retrieve workspace role assignments.",
             detail=f"REST API error: {exc}",
             recommendation=(
@@ -73,7 +77,7 @@ def check_workspace_roles(
             level=LEVEL_INFO,
             category=CATEGORY_WORKSPACE_ROLES,
             check_name="no_workspace_roles_found",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="No workspace role assignments returned.",
         ))
         return findings
@@ -107,7 +111,7 @@ def check_workspace_roles(
                 level=level,
                 category=CATEGORY_WORKSPACE_ROLES,
                 check_name="entire_tenant_access",
-                object_name=workspace_id,
+                object_name=obj_name,
                 message=(
                     f"Entire tenant has {role} access to the workspace."
                 ),
@@ -132,7 +136,7 @@ def check_workspace_roles(
                 level=LEVEL_MEDIUM,
                 category=CATEGORY_WORKSPACE_ROLES,
                 check_name="service_principal_admin",
-                object_name=workspace_id,
+                object_name=obj_name,
                 message=(
                     f"Service principal [{display_name}] has Admin role."
                 ),
@@ -158,7 +162,7 @@ def check_workspace_roles(
             level=LEVEL_HIGH,
             category=CATEGORY_WORKSPACE_ROLES,
             check_name="excessive_workspace_admins",
-            object_name=workspace_id,
+            object_name=obj_name,
             message=(
                 f"Workspace has {len(admins)} Admin(s) "
                 f"(threshold: {config.max_workspace_admins})."
@@ -179,7 +183,7 @@ def check_workspace_roles(
             level=LEVEL_INFO,
             category=CATEGORY_WORKSPACE_ROLES,
             check_name="workspace_admins_ok",
-            object_name=workspace_id,
+            object_name=obj_name,
             message=(
                 f"Workspace has {len(admins)} Admin(s) — "
                 f"within threshold."
@@ -195,7 +199,7 @@ def check_workspace_roles(
             level=LEVEL_INFO,
             category=CATEGORY_WORKSPACE_ROLES,
             check_name="workspace_roles_healthy",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Workspace role assignments follow best practices.",
             detail=(
                 f"{total} assignment(s): {len(admins)} Admin, "

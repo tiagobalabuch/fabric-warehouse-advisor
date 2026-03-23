@@ -77,7 +77,7 @@ def detect_auth_mode(
             level=LEVEL_INFO,
             category=CATEGORY_AUTH_MODE,
             check_name="auth_mode_detected",
-            object_name=sql_endpoint_id,
+            object_name=config.warehouse_name,
             message=f"SQL endpoint access mode: {auth_mode.replace('_', ' ').title()}.",
             detail=description,
         ))
@@ -86,7 +86,7 @@ def detect_auth_mode(
             level=LEVEL_LOW,
             category=CATEGORY_AUTH_MODE,
             check_name="auth_mode_unknown",
-            object_name=sql_endpoint_id,
+            object_name=config.warehouse_name,
             message=(
                 "Could not detect the SQL endpoint access mode."
             ),

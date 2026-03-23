@@ -30,6 +30,7 @@ def check_network_isolation(
     rest_client: FabricRestClient,
     workspace_id: str,
     config: SecurityCheckConfig,
+    workspace_display_name: str = "",
 ) -> List[Finding]:
     """Analyse workspace network communication policy.
 
@@ -41,6 +42,8 @@ def check_network_isolation(
         Target workspace ID.
     config : SecurityCheckConfig
         Advisor configuration.
+    workspace_display_name : str
+        Human-readable workspace name for report display.
 
     Returns
     -------
@@ -48,6 +51,7 @@ def check_network_isolation(
         Findings related to network isolation settings.
     """
     findings: List[Finding] = []
+    obj_name = workspace_display_name or workspace_id
 
     try:
         policy = rest_client.get_network_communication_policy(workspace_id)
@@ -56,7 +60,7 @@ def check_network_isolation(
             level=LEVEL_LOW,
             category=CATEGORY_NETWORK,
             check_name="network_policy_query_failed",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Unable to retrieve network communication policy.",
             detail=f"REST API error: {exc}",
             recommendation=(
@@ -87,7 +91,7 @@ def check_network_isolation(
             level=LEVEL_HIGH,
             category=CATEGORY_NETWORK,
             check_name="inbound_public_access_allowed",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Inbound public network access is ALLOWED.",
             detail=(
                 "The workspace accepts connections from public networks. "
@@ -105,7 +109,7 @@ def check_network_isolation(
             level=LEVEL_INFO,
             category=CATEGORY_NETWORK,
             check_name="inbound_public_access_denied",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Inbound public network access is DENIED.",
             detail=(
                 "The workspace blocks connections from public networks. "
@@ -118,7 +122,7 @@ def check_network_isolation(
             level=LEVEL_MEDIUM,
             category=CATEGORY_NETWORK,
             check_name="inbound_policy_unknown",
-            object_name=workspace_id,
+            object_name=obj_name,
             message=(
                 f"Inbound network policy has unexpected value: "
                 f"'{inbound_action}'."
@@ -140,7 +144,7 @@ def check_network_isolation(
             level=LEVEL_LOW,
             category=CATEGORY_NETWORK,
             check_name="outbound_public_access_allowed",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Outbound public network access is ALLOWED.",
             detail=(
                 "The workspace can send data to public endpoints. "
@@ -157,7 +161,7 @@ def check_network_isolation(
             level=LEVEL_INFO,
             category=CATEGORY_NETWORK,
             check_name="outbound_public_access_denied",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Outbound public network access is DENIED.",
             detail=(
                 "The workspace blocks outbound connections to public "
@@ -172,7 +176,7 @@ def check_network_isolation(
             level=LEVEL_INFO,
             category=CATEGORY_NETWORK,
             check_name="network_isolation_healthy",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Network isolation is properly configured.",
             detail=(
                 f"Inbound: {inbound_action}, Outbound: {outbound_action}."

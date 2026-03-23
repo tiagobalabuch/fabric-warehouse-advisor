@@ -258,7 +258,7 @@ def _check_resource_imbalance(
                 level=LEVEL_MEDIUM,
                 category=CATEGORY_CUSTOM_SQL_POOLS,
                 check_name="resource_allocation_imbalance",
-                object_name=f"Pool: {name}",
+                object_name=name,
                 message=(
                     f"Pool \"{name}\" is allocated only {pct}% of resources."
                 ),
@@ -296,7 +296,7 @@ def _check_single_pool_dominance(
                 level=LEVEL_LOW,
                 category=CATEGORY_CUSTOM_SQL_POOLS,
                 check_name="single_pool_dominance",
-                object_name=f"Pool: {name}",
+                object_name=name,
                 message=(
                     f"Pool \"{name}\" holds {pct}% of resources while "
                     f"other pools exist."
@@ -331,7 +331,7 @@ def _check_empty_classifiers(
                 level=LEVEL_HIGH,
                 category=CATEGORY_CUSTOM_SQL_POOLS,
                 check_name="empty_classifier",
-                object_name=f"Pool: {name}",
+                object_name=name,
                 message=(
                     f"Pool \"{name}\" has no classifier values configured."
                 ),
@@ -381,7 +381,7 @@ def _check_read_optimization(
                 level=LEVEL_LOW,
                 category=CATEGORY_CUSTOM_SQL_POOLS,
                 check_name="read_optimization_missing",
-                object_name=f"Pool: {name}",
+                object_name=name,
                 message=(
                     f"Pool \"{name}\" appears to serve read-heavy traffic "
                     f"(based on {hint}) but is not optimized for reads."
@@ -485,7 +485,7 @@ def _check_pool_pressure(
             level=level,
             category=CATEGORY_CUSTOM_SQL_POOLS,
             check_name="pool_under_pressure",
-            object_name=f"Pool: {pool_name}",
+            object_name=pool_name,
             message=(
                 f"Pool \"{pool_name}\" experienced resource pressure "
                 f"{events} time(s) in the last {lookback_label}."

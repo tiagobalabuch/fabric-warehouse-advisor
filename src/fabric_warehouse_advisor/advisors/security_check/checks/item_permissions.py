@@ -94,7 +94,7 @@ def check_item_permissions(
                 level=LEVEL_INFO,
                 category=CATEGORY_ITEM_PERMISSIONS,
                 check_name="item_permissions_skipped_no_admin",
-                object_name=warehouse_id,
+                object_name=config.warehouse_name,
                 message=(
                     "Item permissions check skipped — "
                     "Fabric Admin role is required."
@@ -116,7 +116,7 @@ def check_item_permissions(
             level=LEVEL_LOW,
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="item_permissions_query_failed",
-            object_name=warehouse_id,
+            object_name=config.warehouse_name,
             message="Unable to retrieve item access details.",
             detail=f"REST API error: {exc}",
             recommendation=(
@@ -133,7 +133,7 @@ def check_item_permissions(
             level=LEVEL_INFO,
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="no_item_permissions_found",
-            object_name=warehouse_id,
+            object_name=config.warehouse_name,
             message="No item-level permission entries returned.",
         ))
         return findings
@@ -164,7 +164,7 @@ def check_item_permissions(
                 level=LEVEL_CRITICAL,
                 category=CATEGORY_ITEM_PERMISSIONS,
                 check_name="entire_tenant_item_access",
-                object_name=warehouse_id,
+                object_name=config.warehouse_name,
                 message=(
                     f"Entire tenant has item-level access to the "
                     f"{item}."
@@ -192,7 +192,7 @@ def check_item_permissions(
                     level=LEVEL_MEDIUM,
                     category=CATEGORY_ITEM_PERMISSIONS,
                     check_name="item_write_outside_workspace_role",
-                    object_name=warehouse_id,
+                    object_name=config.warehouse_name,
                     message=(
                         f"[{display_name}] has item-level Write "
                         f"permission without a workspace role that "
@@ -220,7 +220,7 @@ def check_item_permissions(
             level=LEVEL_HIGH,
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="excessive_readdata_sharing",
-            object_name=warehouse_id,
+            object_name=config.warehouse_name,
             message=(
                 f"{len(read_data_principals)} principal(s) have "
                 f"ReadData access (threshold: "
@@ -244,7 +244,7 @@ def check_item_permissions(
             level=LEVEL_INFO,
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="item_permissions_healthy",
-            object_name=warehouse_id,
+            object_name=config.warehouse_name,
             message="Item-level permissions follow best practices.",
             detail=(
                 f"{len(all_principals)} principal(s) with item access. "
@@ -258,7 +258,7 @@ def check_item_permissions(
             level=LEVEL_INFO,
             category=CATEGORY_ITEM_PERMISSIONS,
             check_name="item_permissions_summary",
-            object_name=warehouse_id,
+            object_name=config.warehouse_name,
             message=f"Item access summary for {item}.",
             detail=(
                 f"{len(all_principals)} principal(s) with item access. "

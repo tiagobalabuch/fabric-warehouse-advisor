@@ -459,6 +459,7 @@ class SecurityCheckAdvisor:
             pr = tracker.run_phase(
                 "Phase 1: Workspace Roles",
                 check_workspace_roles, rest_client, cfg.workspace_id, cfg,
+                workspace_display_name=ws_display_name,
             )
             all_findings.extend(pr.findings)
         else:
@@ -479,6 +480,7 @@ class SecurityCheckAdvisor:
             pr = tracker.run_phase(
                 "Phase 2: Network Isolation",
                 check_network_isolation, rest_client, cfg.workspace_id, cfg,
+                workspace_display_name=ws_display_name,
             )
             all_findings.extend(pr.findings)
         else:
@@ -499,6 +501,7 @@ class SecurityCheckAdvisor:
             pr = tracker.run_phase(
                 "Phase 3: OneLake Settings",
                 check_onelake_settings, rest_client, cfg.workspace_id, cfg,
+                workspace_display_name=ws_display_name,
             )
             all_findings.extend(pr.findings)
         else:
