@@ -500,12 +500,13 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
                 if f0.detail:
                     h.append(f'<small>{esc(f0.detail).replace(chr(10), "<br>")}</small>')
                 h.append(
-                    f'<details style="margin-top:8px">'
-                    f'<summary>Show all {len(findings)} objects</summary><ul>'
+                    f'<details class="sql-details" style="margin-top:8px">'
+                    f'<summary>Show all {len(findings)} objects</summary>'
+                    f'<div class="object-list-container"><div class="object-grid">'
                 )
                 for f in findings:
-                    h.append(f'<li><code>{esc(f.object_name)}</code></li>')
-                h.append('</ul></details></td>')
+                    h.append(f'<span class="obj-pill">{esc(f.object_name)}</span>')
+                h.append('</div></div></details></td>')
                 rec = esc(f0.recommendation).replace("\n", "<br>") if f0.recommendation else ""
                 all_sql = []
                 for f in findings:

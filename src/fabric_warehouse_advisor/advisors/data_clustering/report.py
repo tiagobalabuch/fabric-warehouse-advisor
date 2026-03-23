@@ -42,6 +42,137 @@ _ICON_DIAMOND = "\U0001f538"      # 🔸  (Medium cardinality)
 _ICON_MINUS   = "\u2796"          # ➖  (Not recommended)
 
 
+# ══════════════════════════════════════════════════════════════════════
+# Best Practices — single source of truth for text, markdown, and HTML
+# ══════════════════════════════════════════════════════════════════════
+# Each entry: (card_type, title, bullets)
+#   card_type: "do" | "dont" | "info" | "warn"
+#   title:     card heading
+#   bullets:   list of (text_plain, text_md, text_html) tuples
+
+_BP_SVG_CHECK = (
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round">'
+    '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>'
+    '<polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+)
+_BP_SVG_CROSS = (
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round">'
+    '<circle cx="12" cy="12" r="10"></circle>'
+    '<line x1="15" y1="9" x2="9" y2="15"></line>'
+    '<line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+)
+_BP_SVG_BOLT = (
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round">'
+    '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>'
+)
+_BP_SVG_WARN = (
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" '
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+    'stroke-linejoin="round">'
+    '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 '
+    '1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>'
+    '<line x1="12" y1="9" x2="12" y2="13"></line>'
+    '<line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+)
+
+_BP_CARD_SVG = {
+    "do": _BP_SVG_CHECK,
+    "dont": _BP_SVG_CROSS,
+    "info": _BP_SVG_BOLT,
+    "warn": _BP_SVG_WARN,
+}
+
+_BP_CARD_CSS = {
+    "do": "do-card",
+    "dont": "dont-card",
+    "info": "info-card",
+    "warn": "warn-card",
+}
+
+BestPracticeBullet = tuple[str, str, str]
+BestPracticeCard = tuple[str, str, list[BestPracticeBullet]]
+
+_BEST_PRACTICES: list[BestPracticeCard] = [
+    # (card_type, title, [(text, markdown, html), ...])
+    ("do", "Optimal Targets", [
+        (
+            "Data clustering is most effective on LARGE tables.",
+            "Data clustering is most effective on **large tables**.",
+            "Data clustering is most effective on <b>large tables</b>.",
+        ),
+        (
+            "Choose columns with mid-to-high cardinality in WHERE filters.",
+            "Choose columns with **mid-to-high cardinality** used in `WHERE` filters.",
+            "Choose columns with <b>mid-to-high cardinality</b> used in "
+            "<code>WHERE</code> filters.",
+        ),
+    ]),
+    ("dont", "Anti-Patterns", [
+        (
+            "Equality JOIN conditions do NOT benefit from clustering.",
+            "Equality `JOIN` conditions do **NOT** benefit from data clustering.",
+            "Equality <code>JOIN</code> conditions do <b>NOT</b> benefit "
+            "from data clustering.",
+        ),
+        (
+            "Don't cluster on more columns than strictly necessary.",
+            "Don't cluster on more columns than strictly necessary.",
+            "Don't cluster on more columns than strictly necessary.",
+        ),
+    ]),
+    ("info", "Ingestion Strategy", [
+        (
+            "Batch ingestion (≥ 1M rows per DML) for optimal clustering.",
+            "Batch ingestion (≥ 1M rows per DML) for optimal clustering quality.",
+            "Use <b>batch ingestion</b> (&ge; 1M rows per DML operation) "
+            "to ensure optimal clustering quality upon write.",
+        ),
+        (
+            "Column order in CLUSTER BY does not affect row storage.",
+            "Column order in `CLUSTER BY` does not affect how rows are stored.",
+            "Column order in your <code>CLUSTER BY</code> statement does "
+            "<b>not</b> affect how rows are physically stored.",
+        ),
+    ]),
+    ("warn", "Data Type Limitations", [
+        (
+            "For char/varchar, only the first 32 characters produce stats.",
+            "For `char`/`varchar`, only the first 32 characters produce stats.",
+            "For <code>char</code> and <code>varchar</code> columns, only "
+            "the <b>first 32 characters</b> produce clustering statistics.",
+        ),
+        (
+            "For decimal with precision > 18, predicates won't push down.",
+            "For `decimal` with precision > 18, predicates won't push down.",
+            "For <code>decimal</code> types with a precision <b>greater "
+            "than 18</b>, predicates will not push down.",
+        ),
+    ]),
+]
+
+# Icon mapping for text report by card type
+_BP_TEXT_ICONS = {
+    "do": _ICON_CHECK,
+    "dont": _ICON_CROSS,
+    "info": _ICON_BOLT,
+    "warn": _ICON_WARN,
+}
+
+# Icon mapping for markdown report by card type
+_BP_MD_ICONS = {
+    "do": _ICON_CHECK,
+    "dont": _ICON_CROSS,
+    "info": _ICON_BOLT,
+    "warn": _ICON_WARN,
+}
+
+
 # ── helper functions ────────────────────────────────────────────────
 
 def _score_bar(score: int, width: int = 20) -> str:
@@ -231,18 +362,11 @@ def generate_text_report(
     L.append(f"  {'═' * 58}")
     L.append(f"  {_ICON_BULB}  BEST PRACTICES")
     L.append(f"  {'─' * 58}")
-    tips = [
-        f"{_ICON_CHECK}  Data clustering is most effective on LARGE tables.",
-        f"{_ICON_CHECK}  Choose columns with mid-to-high cardinality in WHERE filters.",
-        f"{_ICON_BOLT}  Batch ingestion (>= 1M rows per DML) for optimal clustering.",
-        f"{_ICON_CROSS}  Equality JOIN conditions do NOT benefit from data clustering.",
-        f"{_ICON_WARN}  Don't cluster on more columns than strictly necessary.",
-        f"{_ICON_GEAR}  Column order in CLUSTER BY does not affect row storage.",
-        f"{_ICON_WARN}  For char/varchar, only the first 32 characters produce stats.",
-        f"{_ICON_WARN}  For decimal with precision > 18, predicates won't push down.",
-    ]
-    for tip in tips:
-        L.append(f"    {tip}")
+    for card_type, title, bullets in _BEST_PRACTICES:
+        icon = _BP_TEXT_ICONS.get(card_type, _ICON_BULB)
+        L.append(f"    {icon}  {title}")
+        for text_plain, _text_md, _text_html in bullets:
+            L.append(f"       • {text_plain}")
     L.append(f"  {'═' * 58}")
     L.append("")
     L.append("  Generated by Fabric Warehouse Advisor")
@@ -375,17 +499,12 @@ def generate_markdown_report(
         md.append("```\n")
 
     md.append(f"## {_ICON_BULB} Best Practices\n")
-    md.append("| | Recommendation |")
-    md.append("|---|---|")
-    md.append(f"| {_ICON_CHECK} | Data clustering is most effective on **large tables**. |")
-    md.append(f"| {_ICON_CHECK} | Choose columns with **mid-to-high cardinality** used in `WHERE` filters. |")
-    md.append(f"| {_ICON_BOLT} | Batch ingestion (>= 1 M rows per DML) for optimal clustering quality. |")
-    md.append(f"| {_ICON_CROSS} | Equality `JOIN` conditions do **NOT** benefit from data clustering. |")
-    md.append(f"| {_ICON_WARN} | Don't cluster on more columns than strictly necessary. |")
-    md.append(f"| {_ICON_GEAR} | Column order in `CLUSTER BY` does not affect how rows are stored. |")
-    md.append(f"| {_ICON_WARN} | For `char`/`varchar`, only the first 32 characters produce stats. |")
-    md.append(f"| {_ICON_WARN} | For `decimal` with precision > 18, predicates won't push down. |")
-    md.append("")
+    for card_type, title, bullets in _BEST_PRACTICES:
+        icon = _BP_MD_ICONS.get(card_type, _ICON_BULB)
+        md.append(f"### {icon} {title}\n")
+        for _text_plain, text_md, _text_html in bullets:
+            md.append(f"- {text_md}")
+        md.append("")
     md.append("---")
     md.append("*Generated by Fabric Warehouse Advisor*")
 
@@ -634,20 +753,20 @@ def generate_html_report(
             '</div>'
         )
 
-    tips_html = [
-        "Data clustering is most effective on <b>large tables</b>.",
-        "Choose columns with <b>mid-to-high cardinality</b> used in <code>WHERE</code> filters.",
-        "Batch ingestion (&ge; 1 M rows per DML) for optimal clustering quality.",
-        "Equality <code>JOIN</code> conditions do <b>NOT</b> benefit from data clustering.",
-        "Don't cluster on more columns than strictly necessary.",
-        "Column order in <code>CLUSTER BY</code> does not affect how rows are stored.",
-        "For <code>char</code>/<code>varchar</code>, only the first 32 characters produce stats.",
-        "For <code>decimal</code> with precision &gt; 18, predicates won't push down.",
-    ]
-    h.append('<div class="table-container"><div class="table-scroll"><table>')
-    for tip in tips_html:
-        h.append(f'<tr><td>{tip}</td></tr>')
-    h.append('</table></div></div>')
+    h.append('<div class="bp-grid">')
+    for card_type, title, bullets in _BEST_PRACTICES:
+        card_cls = _BP_CARD_CSS.get(card_type, "info-card")
+        svg_icon = _BP_CARD_SVG.get(card_type, _BP_SVG_BOLT)
+        h.append(f'<div class="bp-card {card_cls}">')
+        h.append(f'<div class="bp-icon">{svg_icon}</div>')
+        h.append('<div class="bp-content">')
+        h.append(f'<h4>{esc(title)}</h4>')
+        h.append('<ul>')
+        for _text_plain, _text_md, text_html in bullets:
+            h.append(f'<li>{text_html}</li>')
+        h.append('</ul>')
+        h.append('</div></div>')
+    h.append('</div>')
     h.append('</div>')  # tab-pane
 
     # ── Footer ──────────────────────────────────────────────────────

@@ -594,6 +594,92 @@ REPORT_CSS = r"""<style>
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   * { scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 
+  /* ── Best Practices Cards ─────────────────────────────────────── */
+  .bp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 8px 0;
+  }
+  .bp-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .bp-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  :root.dark .bp-card:hover {
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  .bp-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  }
+  .bp-card.do-card::before   { background: var(--c-low); }
+  .bp-card.dont-card::before { background: var(--c-crit); }
+  .bp-card.warn-card::before { background: var(--c-med); }
+  .bp-card.info-card::before { background: var(--primary); }
+  .bp-icon {
+    font-size: 24px; flex-shrink: 0;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+  }
+  .do-card .bp-icon   { background: var(--c-low-bg); color: var(--c-low); }
+  .dont-card .bp-icon { background: var(--c-crit-bg); color: var(--c-crit); }
+  .warn-card .bp-icon { background: var(--c-med-bg); color: var(--c-med); }
+  .info-card .bp-icon { background: var(--primary-light); color: var(--primary); }
+  .bp-content h4 {
+    margin: 0 0 8px 0; font-size: 15px; color: var(--text-main);
+  }
+  .bp-content ul {
+    margin: 0; padding-left: 20px;
+    color: var(--text-secondary); font-size: 13px; line-height: 1.6;
+  }
+  .bp-content li { margin-bottom: 6px; }
+  .bp-content li:last-child { margin-bottom: 0; }
+  .bp-content code { font-size: 11px; }
+
+  /* ── Scrollable Object Pill Grid ───────────────────────────────── */
+  .object-list-container {
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-color);
+    padding: 16px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .object-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .obj-pill {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    cursor: default;
+  }
+  .obj-pill:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary-hover);
+  }
+
   /* ── Responsive ───────────────────────────────────────────────── */
   @media (max-width: 1024px) {
     .app-container { flex-direction: column; }
@@ -754,12 +840,21 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
       var pane = document.getElementById(btn.getAttribute('data-target'));
       if (!pane) return;
-      var rows = pane.querySelectorAll('tbody tr');
+      var countEl = btn.querySelector('.tab-count');
+      var tbody = pane.querySelector('tbody');
+      if (!tbody) {
+        // No table in this pane (e.g. Best Practices cards) — hide badge
+        if (countEl) countEl.style.display = 'none';
+        return;
+      }
+      var rows = tbody.querySelectorAll('tr');
       var visible = Array.from(rows).filter(function(r) {
         return r.style.display !== 'none';
       }).length;
-      var el = btn.querySelector('.tab-count');
-      if (el) el.textContent = visible;
+      if (countEl) {
+        countEl.style.display = '';
+        countEl.textContent = visible;
+      }
       btn.style.opacity =
         (visible === 0 && !btn.classList.contains('active')) ? '0.5' : '';
     });
@@ -807,18 +902,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  /* ── Copy Buttons on SQL / DDL blocks ─────────────────────────── */
+  /* ── Copy Buttons on SQL / DDL / Object-grid blocks ──────────── */
   document.querySelectorAll('.sql-details summary, .ddl-details summary')
     .forEach(function(summary) {
-      var pre = summary.parentNode.querySelector('pre.sql, .ddl-block');
-      if (!pre) return;
+      var target = summary.parentNode.querySelector('pre.sql, .ddl-block, .object-grid');
+      if (!target) return;
       var btn = document.createElement('button');
       btn.className = 'copy-btn';
       btn.textContent = 'Copy';
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        navigator.clipboard.writeText(pre.textContent).then(function() {
+        var text = '';
+        if (target.classList.contains('object-grid')) {
+          var pills = Array.from(target.querySelectorAll('.obj-pill'));
+          text = pills.map(function(p) { return p.textContent; }).join(', ');
+        } else {
+          text = target.textContent;
+        }
+        navigator.clipboard.writeText(text).then(function() {
           btn.textContent = 'Copied!';
           btn.classList.add('success');
           setTimeout(function() {
