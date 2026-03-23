@@ -148,6 +148,10 @@ class DataClusteringConfig:
     schema_names: list[str] = field(default_factory=list)
     table_names: list[str] = field(default_factory=list)
 
+    # -- REST API (for workspace metadata) --
+    fabric_token: str = ""
+    use_notebook_token: bool = True
+
     # -- Output --
     verbose: bool = False
 

@@ -423,6 +423,8 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         tabs=tabs,
         generated_at=captured_at,
         badge_label=badge_label,
+        workspace_display_name=summary.workspace_display_name,
+        capacity_sku=summary.capacity_sku,
         auth_mode=summary.auth_mode,
     ))
 

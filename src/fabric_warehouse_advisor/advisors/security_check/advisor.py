@@ -325,6 +325,17 @@ class SecurityCheckAdvisor:
                     "    Set workspace_id in config to enable REST API checks."
                 )
 
+        # ── Resolve workspace display name + capacity SKU ───────────
+        ws_display_name = ""
+        cap_sku = ""
+        if rest_client and cfg.workspace_id:
+            ws_display_name, cap_sku = rest_client.get_workspace_metadata(
+                cfg.workspace_id
+            )
+            self._log(f"  Workspace name: {ws_display_name}")
+            if cap_sku:
+                self._log(f"  Capacity SKU : {cap_sku}")
+
         # ================================================================
         # Resolve warehouse_id from warehouse_name if needed
         # ================================================================
@@ -897,6 +908,8 @@ class SecurityCheckAdvisor:
             warehouse_name=cfg.warehouse_name,
             warehouse_edition=edition,
             auth_mode=auth_mode,
+            workspace_display_name=ws_display_name,
+            capacity_sku=cap_sku,
             findings=all_findings,
         )
 

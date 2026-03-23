@@ -544,6 +544,8 @@ def generate_html_report(
     min_score: int = 40,
     captured_at: str | None = None,
     warehouse_name: str = "",
+    workspace_display_name: str = "",
+    capacity_sku: str = "",
 ) -> str:
     """Generate a self-contained HTML report for ``displayHTML()`` in Fabric."""
     from ...core.html_template import (
@@ -586,6 +588,8 @@ def generate_html_report(
         warehouse_name=warehouse_name,
         tabs=tabs,
         generated_at=captured_at,
+        workspace_display_name=workspace_display_name,
+        capacity_sku=capacity_sku,
     ))
 
     # ── Main content ────────────────────────────────────────────

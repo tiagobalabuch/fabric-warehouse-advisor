@@ -156,6 +156,10 @@ class PerformanceCheckConfig:
     warehouse_id: str = ""
     sql_endpoint_id: str = ""
 
+    # -- REST API (for workspace metadata) --
+    fabric_token: str = ""
+    use_notebook_token: bool = True
+
     # -- Scope filtering --
     schema_names: list[str] = field(default_factory=list)
     table_names: list[str] = field(default_factory=list)

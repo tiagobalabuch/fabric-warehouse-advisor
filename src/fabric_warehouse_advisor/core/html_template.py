@@ -982,6 +982,8 @@ def render_sidebar(
     *,
     generated_at: str = "",
     badge_label: str = "Warehouse",
+    workspace_display_name: str = "",
+    capacity_sku: str = "",
     auth_mode: str = "",
 ) -> str:
     """Render the sidebar with brand, warehouse badge, tab nav, and footer.
@@ -1001,6 +1003,10 @@ def render_sidebar(
         Timestamp shown in the sidebar footer.
     badge_label : str
         Label above the warehouse name (e.g. "Warehouse" or "SQL Endpoint").
+    workspace_display_name : str
+        Fabric workspace display name. Rendered as key-value row.
+    capacity_sku : str
+        Fabric capacity SKU (e.g. "F4"). Rendered as key-value row.
     auth_mode : str
         Auth mode string ("user_identity" or "delegated"). If set, a small
         pill badge is rendered below the warehouse name in the sidebar.
@@ -1016,6 +1022,20 @@ def render_sidebar(
         f'<div class="warehouse-badge-label">{esc(badge_label)}</div>',
         f'<div class="warehouse-badge-name">{esc(warehouse_name)}</div>',
     ]
+    if workspace_display_name:
+        parts.append(
+            '<div class="auth-mode-kv">'
+            '<span class="mode-label">Workspace</span>'
+            f'<span class="mode-value">{esc(workspace_display_name)}</span>'
+            '</div>'
+        )
+    if capacity_sku:
+        parts.append(
+            '<div class="auth-mode-kv">'
+            '<span class="mode-label">Capacity SKU</span>'
+            f'<span class="mode-value">{esc(capacity_sku)}</span>'
+            '</div>'
+        )
     if auth_mode:
         mode_text = 'User Identity' if auth_mode == 'user_identity' else 'Delegated'
         parts.append(

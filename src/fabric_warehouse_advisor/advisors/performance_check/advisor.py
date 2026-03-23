@@ -43,6 +43,7 @@ from .report import (
 from ...core.report import save_report
 from ...core.warehouse_reader import read_warehouse_query
 from ...core.scope_resolver import resolve_table_scope
+from ...core.fabric_rest_client import FabricRestClient, FabricRestError
 from ...core.phase_tracker import PhaseTracker, PhaseResult, PHASE_COMPLETED, PHASE_SKIPPED, PHASE_FAILED
 
 
@@ -251,6 +252,32 @@ class PerformanceCheckAdvisor:
         total_tables = 0
         total_columns = 0
 
+        # ── REST client for workspace metadata ─────────────────────
+        rest_client: FabricRestClient | None = None
+        ws_display_name = ""
+        cap_sku = ""
+        rest_client = FabricRestClient(
+            token=cfg.fabric_token,
+            use_notebook_token=cfg.use_notebook_token,
+            verbose=cfg.verbose,
+        )
+        if not rest_client.is_available():
+            rest_client = None
+
+        if rest_client and not cfg.workspace_id:
+            auto_ws = FabricRestClient.get_current_workspace_id(spark)
+            if auto_ws:
+                cfg.workspace_id = auto_ws
+                self._log(f"  Auto-detected workspace_id: {auto_ws}")
+
+        if rest_client and cfg.workspace_id:
+            ws_display_name, cap_sku = rest_client.get_workspace_metadata(
+                cfg.workspace_id
+            )
+            self._log(f"  Workspace name: {ws_display_name}")
+            if cap_sku:
+                self._log(f"  Capacity SKU : {cap_sku}")
+
         # ================================================================
         # Phase 0: Warehouse Type Detection
         # ================================================================
@@ -410,6 +437,8 @@ class PerformanceCheckAdvisor:
         summary = CheckSummary(
             warehouse_name=cfg.warehouse_name,
             warehouse_edition=edition,
+            workspace_display_name=ws_display_name,
+            capacity_sku=cap_sku,
             total_tables_analyzed=total_tables,
             total_columns_analyzed=total_columns,
             findings=all_findings,

@@ -93,6 +93,8 @@ class CheckSummary:
     warehouse_name: str = ""
     warehouse_edition: str = ""
     auth_mode: str = ""
+    workspace_display_name: str = ""
+    capacity_sku: str = ""
     total_tables_analyzed: int = 0
     total_columns_analyzed: int = 0
     findings: List[Finding] = field(default_factory=list)
