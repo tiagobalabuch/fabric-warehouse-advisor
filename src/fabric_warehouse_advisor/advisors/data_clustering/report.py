@@ -757,7 +757,7 @@ def generate_html_report(
         h.append(f'<div class="bp-card {card_cls}">')
         h.append(f'<div class="bp-icon">{svg_icon}</div>')
         h.append('<div class="bp-content">')
-        h.append(f'<h4>{_html.escape(title)}</h4>')
+        h.append(f'<h4>{esc(title)}</h4>')
         h.append('<ul>')
         for _text, _md, text_html in bullets:
             h.append(f'<li>{text_html}</li>')

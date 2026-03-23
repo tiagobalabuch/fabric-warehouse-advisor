@@ -841,16 +841,17 @@ document.addEventListener('DOMContentLoaded', function() {
       var pane = document.getElementById(btn.getAttribute('data-target'));
       if (!pane) return;
       var tbody = pane.querySelector('tbody');
-      var el = btn.querySelector('.tab-count');
       if (!tbody) {
         // No table in this pane (e.g. Best Practices cards) — hide badge
-        if (el) el.style.display = 'none';
+        var badge = btn.querySelector('.tab-count');
+        if (badge) badge.style.display = 'none';
         return;
       }
       var rows = tbody.querySelectorAll('tr');
       var visible = Array.from(rows).filter(function(r) {
         return r.style.display !== 'none';
       }).length;
+      var el = btn.querySelector('.tab-count');
       if (el) el.textContent = visible;
       btn.style.opacity =
         (visible === 0 && !btn.classList.contains('active')) ? '0.5' : '';
