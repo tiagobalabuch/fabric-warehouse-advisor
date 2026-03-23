@@ -35,6 +35,7 @@ from .checks.vorder import check_vorder
 from .checks.statistics import check_statistics
 from .checks.collation import check_collation
 from .checks.query_regression import check_query_regression
+from .checks.custom_sql_pools import check_custom_sql_pools
 from .report import (
     generate_text_report,
     generate_markdown_report,
@@ -241,6 +242,7 @@ class PerformanceCheckAdvisor:
         self._log_kv("check_vorder", cfg.check_vorder)
         self._log_kv("check_collation", cfg.check_collation)
         self._log_kv("check_query_regression", cfg.check_query_regression)
+        self._log_kv("check_custom_sql_pools", cfg.check_custom_sql_pools)
         self._log_footer()
 
         _run_start = time.perf_counter()
@@ -427,6 +429,22 @@ class PerformanceCheckAdvisor:
         else:
             print("Phase 6: Collation — SKIPPED (no tables in scope)")
             tracker.record(PhaseResult(name="Phase 6: Collation", status=PHASE_SKIPPED, skip_reason="no tables in scope"))
+        if cfg.phase_delay > 0:
+            time.sleep(cfg.phase_delay)
+
+        # ================================================================
+        # Phase 7: Custom SQL Pools  (workspace-level, REST + T-SQL)
+        # ================================================================
+        if cfg.check_custom_sql_pools:
+            pr = tracker.run_phase(
+                "Phase 7: Custom SQL Pools",
+                check_custom_sql_pools, spark, cfg.warehouse_name, cfg,
+                rest_client=rest_client,
+            )
+            all_findings.extend(pr.findings)
+        else:
+            print("Phase 7: Custom SQL Pools — SKIPPED (disabled in config)")
+            tracker.record(PhaseResult(name="Phase 7: Custom SQL Pools", status=PHASE_SKIPPED, skip_reason="disabled in config"))
 
         # ================================================================
         # Build summary and reports

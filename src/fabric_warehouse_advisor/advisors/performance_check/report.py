@@ -24,6 +24,7 @@ from .findings import (
     CATEGORY_VORDER,
     CATEGORY_COLLATION,
     CATEGORY_QUERY_REGRESSION,
+    CATEGORY_CUSTOM_SQL_POOLS,
 )
 
 
@@ -37,6 +38,7 @@ _CATEGORY_LABELS = {
     CATEGORY_STATISTICS: "Statistics Health",
     CATEGORY_COLLATION: "Collation Consistency",
     CATEGORY_QUERY_REGRESSION: "Query Regression",
+    CATEGORY_CUSTOM_SQL_POOLS: "Custom SQL Pools",
 }
 
 _CATEGORY_ORDER = [
@@ -48,6 +50,8 @@ _CATEGORY_ORDER = [
     CATEGORY_VORDER,
     CATEGORY_DATA_TYPES,
     CATEGORY_COLLATION,
+    # Workload Management
+    CATEGORY_CUSTOM_SQL_POOLS,
 ]
 
 _CATEGORY_SECTIONS = {
@@ -57,6 +61,7 @@ _CATEGORY_SECTIONS = {
     CATEGORY_VORDER: "Storage & Layout",
     CATEGORY_DATA_TYPES: "Storage & Layout",
     CATEGORY_COLLATION: "Storage & Layout",
+    CATEGORY_CUSTOM_SQL_POOLS: "Workload Management",
 }
 
 _LEVEL_ICONS = {
@@ -117,6 +122,11 @@ def generate_text_report(summary: CheckSummary) -> str:
 
         if cat == CATEGORY_QUERY_REGRESSION:
             lines.append("  ⚠️  This analysis runs warehouse-wide and is not filtered")
+            lines.append("     by schema/table selections.")
+            lines.append("")
+
+        if cat == CATEGORY_CUSTOM_SQL_POOLS:
+            lines.append("  ⚠️  This analysis runs workspace-wide and is not filtered")
             lines.append("     by schema/table selections.")
             lines.append("")
 
@@ -207,6 +217,10 @@ def generate_markdown_report(summary: CheckSummary) -> str:
 
         if cat == CATEGORY_QUERY_REGRESSION:
             lines.append("> **⚠️ Note:** This analysis runs warehouse-wide and is not filtered by schema/table selections.")
+            lines.append("")
+
+        if cat == CATEGORY_CUSTOM_SQL_POOLS:
+            lines.append("> **⚠️ Note:** This analysis runs workspace-wide and is not filtered by schema/table selections.")
             lines.append("")
 
         grouped = _group_findings(cat_findings)
@@ -355,7 +369,7 @@ def generate_html_report(summary: CheckSummary, captured_at: str | None = None) 
         )
         h.append(f'<h2 class="print-title">{esc(label)}</h2>')
 
-        if cat in (CATEGORY_QUERY_REGRESSION, CATEGORY_VORDER):
+        if cat in (CATEGORY_QUERY_REGRESSION, CATEGORY_VORDER, CATEGORY_CUSTOM_SQL_POOLS):
             h.append(
                 '<div class="warn-box">'
                 f'{_HTML_WARN} This analysis runs warehouse-wide and is '

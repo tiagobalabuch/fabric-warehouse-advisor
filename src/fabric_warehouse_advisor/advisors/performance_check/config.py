@@ -142,6 +142,31 @@ class PerformanceCheckConfig:
         Minimum number of executions a query must have in **both**
         baseline and recent windows to be considered.
 
+    check_custom_sql_pools : bool
+        Enable the Custom SQL Pools configuration and pressure check.
+        Requires REST API access and workspace_id.
+
+    pool_pressure_lookback_hours : int
+        How many hours back in ``sql_pool_insights`` to look for
+        pool pressure events. Default is 168 (7 days). Use smaller
+        values (e.g. 24) for hourly granularity.
+
+    pool_min_resource_pct_warning : int
+        Flag pools with ``maxResourcePercentage`` at or below this
+        value as potentially under-resourced.
+
+    pool_dominance_threshold_pct : int
+        Flag pools holding at least this percentage of resources
+        when other pools also exist.
+
+    pool_pressure_critical_threshold : int
+        Number of pressure events in the lookback window to
+        escalate a finding to CRITICAL.
+
+    pool_pressure_high_threshold : int
+        Number of pressure events in the lookback window to
+        escalate a finding to HIGH (below this is MEDIUM).
+
     verbose : bool
         If ``True``, print intermediate details for debugging.
 
@@ -202,6 +227,14 @@ class PerformanceCheckConfig:
     regression_factor_warning: float = 2.0
     regression_factor_critical: float = 5.0
     regression_min_executions: int = 3
+
+    # -- Custom SQL Pools settings --
+    check_custom_sql_pools: bool = True
+    pool_pressure_lookback_hours: int = 168
+    pool_min_resource_pct_warning: int = 5
+    pool_dominance_threshold_pct: int = 90
+    pool_pressure_critical_threshold: int = 50
+    pool_pressure_high_threshold: int = 10
 
     # -- Output --
     verbose: bool = False

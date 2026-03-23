@@ -399,6 +399,30 @@ class FabricRestClient:
         )
         return self.get(url)
 
+    def get_sql_pools_configuration(
+        self,
+        workspace_id: str,
+    ) -> Dict[str, Any]:
+        """Retrieve the Custom SQL Pools configuration for a workspace.
+
+        ``GET /v1/workspaces/{workspaceId}/warehouses/sqlPoolsConfiguration``
+
+        Requires **Administrator** workspace role.
+
+        Returns
+        -------
+        dict
+            Keys: ``customSQLPoolsEnabled`` (bool),
+            ``customSQLPools`` (list of pool dicts with ``name``,
+            ``isDefault``, ``optimizeForReads``,
+            ``maxResourcePercentage``, ``classifier``).
+        """
+        url = (
+            f"{_FABRIC_API_BASE}/workspaces/{workspace_id}"
+            f"/warehouses/sqlPoolsConfiguration"
+        )
+        return self.get(url)
+
     def list_warehouses(
         self,
         workspace_id: str,
