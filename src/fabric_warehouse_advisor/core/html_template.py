@@ -648,6 +648,38 @@ REPORT_CSS = r"""<style>
   .bp-content li:last-child { margin-bottom: 0; }
   .bp-content code { font-size: 11px; }
 
+  /* ── Scrollable Object Pill Grid ───────────────────────────────── */
+  .object-list-container {
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-color);
+    padding: 16px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .object-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .obj-pill {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    cursor: default;
+  }
+  .obj-pill:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary-hover);
+  }
+
   /* ── Responsive ───────────────────────────────────────────────── */
   @media (max-width: 1024px) {
     .app-container { flex-direction: column; }
@@ -867,18 +899,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  /* ── Copy Buttons on SQL / DDL blocks ─────────────────────────── */
+  /* ── Copy Buttons on SQL / DDL / Object-grid blocks ──────────── */
   document.querySelectorAll('.sql-details summary, .ddl-details summary')
     .forEach(function(summary) {
-      var pre = summary.parentNode.querySelector('pre.sql, .ddl-block');
-      if (!pre) return;
+      var target = summary.parentNode.querySelector('pre.sql, .ddl-block, .object-grid');
+      if (!target) return;
       var btn = document.createElement('button');
       btn.className = 'copy-btn';
       btn.textContent = 'Copy';
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        navigator.clipboard.writeText(pre.textContent).then(function() {
+        var text = '';
+        if (target.classList.contains('object-grid')) {
+          var pills = Array.from(target.querySelectorAll('.obj-pill'));
+          text = pills.map(function(p) { return p.textContent; }).join(', ');
+        } else {
+          text = target.textContent;
+        }
+        navigator.clipboard.writeText(text).then(function() {
           btn.textContent = 'Copied!';
           btn.classList.add('success');
           setTimeout(function() {
