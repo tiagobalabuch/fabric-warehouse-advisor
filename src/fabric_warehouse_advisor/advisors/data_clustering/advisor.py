@@ -23,6 +23,7 @@ Usage
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
@@ -729,8 +730,6 @@ class DataClusteringAdvisor:
                     )
         else:
             # Parallel — one thread per table, capped at max_workers
-            from concurrent.futures import ThreadPoolExecutor, as_completed
-
             self._log(
                 f"  Running in parallel with up to "
                 f"{max_workers} concurrent table(s) ..."
