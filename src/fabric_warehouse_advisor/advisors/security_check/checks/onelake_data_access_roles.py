@@ -171,7 +171,7 @@ def check_onelake_data_access_roles(
             level=LEVEL_INFO,
             category=CATEGORY_ONELAKE_DATA_ACCESS,
             check_name="no_onelake_roles",
-            object_name=item_id,
+            object_name=config.warehouse_name,
             message="No OneLake data access roles found.",
             recommendation=(
                 "OneLake security may not be enabled on this item. "
@@ -187,7 +187,7 @@ def check_onelake_data_access_roles(
         level=LEVEL_INFO,
         category=CATEGORY_ONELAKE_DATA_ACCESS,
         check_name="onelake_roles_summary",
-        object_name=item_id,
+        object_name=config.warehouse_name,
         message=f"Found {len(roles)} OneLake data access role(s).",
         detail=f"Roles: {', '.join(role_names)}",
     ))
@@ -359,7 +359,7 @@ def check_onelake_data_access_roles(
             level=_level(LEVEL_LOW),
             category=CATEGORY_ONELAKE_DATA_ACCESS,
             check_name="excessive_onelake_roles",
-            object_name=item_id,
+            object_name=config.warehouse_name,
             message=(
                 f"Found {len(roles)} OneLake data access roles "
                 f"(threshold: {config.max_onelake_roles})."

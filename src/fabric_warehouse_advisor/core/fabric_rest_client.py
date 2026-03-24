@@ -399,6 +399,30 @@ class FabricRestClient:
         )
         return self.get(url)
 
+    def get_sql_pools_configuration(
+        self,
+        workspace_id: str,
+    ) -> Dict[str, Any]:
+        """Retrieve the Custom SQL Pools configuration for a workspace.
+
+        ``GET /v1/workspaces/{workspaceId}/warehouses/sqlPoolsConfiguration``
+
+        Requires **Administrator** workspace role.
+
+        Returns
+        -------
+        dict
+            Keys: ``customSQLPoolsEnabled`` (bool),
+            ``customSQLPools`` (list of pool dicts with ``name``,
+            ``isDefault``, ``optimizeForReads``,
+            ``maxResourcePercentage``, ``classifier``).
+        """
+        url = (
+            f"{_FABRIC_API_BASE}/workspaces/{workspace_id}"
+            f"/warehouses/sqlPoolsConfiguration"
+        )
+        return self.get(url)
+
     def list_warehouses(
         self,
         workspace_id: str,
@@ -714,6 +738,75 @@ class FabricRestClient:
         return ""
 
     # ── Private helpers ───────────────────────────────────────────
+
+    # ── Workspace & Capacity Metadata ─────────────────────────────
+
+    def get_workspace(
+        self,
+        workspace_id: str,
+    ) -> Dict[str, Any]:
+        """Retrieve workspace details.
+
+        ``GET /v1/workspaces/{workspaceId}``
+
+        Requires **Viewer** or higher workspace role.
+
+        Returns
+        -------
+        dict
+            Keys include ``id``, ``displayName``, ``capacityId``,
+            ``description``, ``type``.
+        """
+        url = f"{_FABRIC_API_BASE}/workspaces/{workspace_id}"
+        return self.get(url)
+
+    def list_capacities(self) -> List[Dict[str, Any]]:
+        """List all accessible Fabric capacities.
+
+        ``GET /v1/capacities``
+
+        Returns
+        -------
+        list[dict]
+            Each dict contains ``id``, ``displayName``, ``sku``,
+            ``region``, ``state``.
+        """
+        url = f"{_FABRIC_API_BASE}/capacities"
+        return self.get_paginated(url)
+
+    def get_workspace_metadata(
+        self,
+        workspace_id: str,
+    ) -> tuple[str, str]:
+        """Resolve workspace display name and capacity SKU.
+
+        Makes one call to get the workspace (for ``displayName`` and
+        ``capacityId``), then one call to list capacities and match
+        by ``capacityId`` to extract the ``sku``.
+
+        Returns
+        -------
+        tuple[str, str]
+            ``(workspace_display_name, capacity_sku)``.  Falls back to
+            ``("(unknown)", "")`` on failure.
+        """
+        ws_name = "(unknown)"
+        sku = ""
+        try:
+            ws = self.get_workspace(workspace_id)
+            ws_name = ws.get("displayName", "(unknown)")
+            capacity_id = ws.get("capacityId", "")
+            if capacity_id:
+                capacities = self.list_capacities()
+                for cap in capacities:
+                    if cap.get("id", "").lower() == capacity_id.lower():
+                        sku = cap.get("sku", "")
+                        break
+        except FabricRestError:
+            pass
+        return ws_name, sku
+
+    # ── Private helpers (parsing) ─────────────────────────────────
 
     @staticmethod
     def _parse_error_message(body: bytes) -> str:

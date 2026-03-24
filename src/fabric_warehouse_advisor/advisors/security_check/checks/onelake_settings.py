@@ -30,6 +30,7 @@ def check_onelake_settings(
     rest_client: FabricRestClient,
     workspace_id: str,
     config: SecurityCheckConfig,
+    workspace_display_name: str = "",
 ) -> List[Finding]:
     """Analyse workspace-level OneLake settings.
 
@@ -41,6 +42,8 @@ def check_onelake_settings(
         Target workspace ID.
     config : SecurityCheckConfig
         Advisor configuration.
+    workspace_display_name : str
+        Human-readable workspace name for report display.
 
     Returns
     -------
@@ -48,6 +51,7 @@ def check_onelake_settings(
         Findings related to OneLake workspace settings.
     """
     findings: List[Finding] = []
+    obj_name = workspace_display_name or workspace_id
 
     # ── Fetch settings ───────────────────────────────────────────
     try:
@@ -58,7 +62,7 @@ def check_onelake_settings(
                 level=LEVEL_INFO,
                 category=CATEGORY_ONELAKE_SETTINGS,
                 check_name="onelake_settings_skipped_no_admin",
-                object_name=workspace_id,
+                object_name=obj_name,
                 message=(
                     "OneLake settings check skipped — Admin "
                     "workspace role is required."
@@ -75,7 +79,7 @@ def check_onelake_settings(
             level=LEVEL_LOW,
             category=CATEGORY_ONELAKE_SETTINGS,
             check_name="onelake_settings_query_failed",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="Unable to retrieve OneLake settings.",
             detail=f"REST API error: {exc}",
             recommendation=(
@@ -94,7 +98,7 @@ def check_onelake_settings(
             level=LEVEL_MEDIUM,
             category=CATEGORY_ONELAKE_SETTINGS,
             check_name="onelake_diagnostics_disabled",
-            object_name=workspace_id,
+            object_name=obj_name,
             message="OneLake diagnostic logging is disabled.",
             detail=(
                 "Without diagnostic logs, you have no visibility "
@@ -114,7 +118,7 @@ def check_onelake_settings(
             level=LEVEL_INFO,
             category=CATEGORY_ONELAKE_SETTINGS,
             check_name="onelake_diagnostics_enabled",
-            object_name=workspace_id,
+            object_name=obj_name,
             message=(
                 f"OneLake diagnostic logging is enabled "
                 f"(destination: {dest_type})."
@@ -129,7 +133,7 @@ def check_onelake_settings(
             level=LEVEL_LOW,
             category=CATEGORY_ONELAKE_SETTINGS,
             check_name="no_immutability_policy",
-            object_name=workspace_id,
+            object_name=obj_name,
             message=(
                 "OneLake diagnostic logs have no immutability policy."
             ),
@@ -152,7 +156,7 @@ def check_onelake_settings(
                 level=LEVEL_INFO,
                 category=CATEGORY_ONELAKE_SETTINGS,
                 check_name="immutability_policy_found",
-                object_name=workspace_id,
+                object_name=obj_name,
                 message=(
                     f"Immutability policy: scope={scope}, "
                     f"retention={days} day(s)."
