@@ -113,8 +113,6 @@ You can work with the Spark DataFrame for further analysis:
 # Show top candidates
 display(result.findings)
 
-# Save scores to a Lakehouse table
-result.findings.write.mode("overwrite").saveAsTable("performance_findings")
 ```
 
 See the [Finding dataclass](index.md#output-model) for the full field reference.

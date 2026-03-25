@@ -1,6 +1,6 @@
 # How It Works
 
-The advisor runs an **multi-phase pipeline** that validates the warehouse edition, collects metadata, analyses query patterns, estimates cardinality, and produces scored recommendations.  Everything runs inside a single Fabric notebook session.
+The advisor runs a **multi-phase pipeline** that validates the warehouse edition, collects metadata, analyses query patterns, estimates cardinality, and produces scored recommendations.  Everything runs inside a single Fabric notebook session.
 
 ## Architecture Overview
 

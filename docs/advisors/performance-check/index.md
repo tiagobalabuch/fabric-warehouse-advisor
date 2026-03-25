@@ -6,7 +6,7 @@ The Performance Check Advisor scans your Fabric Warehouse or SQL Analytics Endpo
 
 | Category | What it detects |
 |----------|----------------|
-| **Warehouse Type** | Whether you're on a DataWarehouse or SQL  Endpoint — gates subsequent checks |
+| **Warehouse Type** | Whether you're on a DataWarehouse or SQL Analytics Endpoint — gates subsequent checks |
 | **Data Types** | `VARCHAR(MAX)`, oversized columns, `CHAR` vs `VARCHAR`, decimal over-precision, FLOAT for money, BIGINT for small ranges, dates stored as strings, nullable columns |
 | **Caching** | Result set caching status, cache hit ratio, cold-start detection |
 | **V-Order** | V-Order optimization state (DataWarehouse only — irreversible if disabled) |
