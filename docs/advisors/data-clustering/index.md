@@ -27,41 +27,40 @@ config = DataClusteringConfig(
 advisor = DataClusteringAdvisor(spark, config)
 result = advisor.run()
 
-# Rich HTML report — best way to view results in a Fabric notebook
+# To experience all features and interactive capabilities, save the report and open it in a web browser
+result.save("/lakehouse/default/Files/reports/report.html")
+# Rich HTML report
 displayHTML(result.html_report)
 ```
 
+!!! warning
+    Execution time and CU consumption of the Data Clustering Advisor vary based on data volume, and column count. For optimal performance and minimal impact, we recommend running the Advisor during low-usage periods and outside peak concurrency windows.
+
 ## Working with Results
 
+!!! tip "Web Browser is recommended"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
+    
 ### Exploring Scores
 
 ```python
 # Spark DataFrame with per-column scores
-result.scores_df.show()
-```
-
-### Programmatic Access
-
-```python
-for rec in result.recommendations:
-    print(f"{rec.schema_name}.{rec.table_name}: {rec.cluster_by_ddl}")
-    for col in rec.recommended_columns:
-        print(f"  {col.column_name} — score {col.composite_score}, {col.recommendation}")
+display(result.scores_df)
 ```
 
 ### Saving Reports
 
 ```python
-result.save("/lakehouse/default/Files/reports/clustering_report.html")
-result.save("/lakehouse/default/Files/reports/clustering_report.md", "md")
-result.save("/lakehouse/default/Files/reports/clustering_report.txt", "txt")
+result.save("/lakehouse/default/Files/reports/dataclustering_report.html")
+result.save("/lakehouse/default/Files/reports/dataclustering_report.md", "md")
+result.save("/lakehouse/default/Files/reports/dataclustering_report.txt", "txt")
 ```
 
-### Persisting Scores to Delta
+### Persisting data to Delta table
 
 ```python
 result.scores_df.write.mode("overwrite").format("delta").saveAsTable(
-    "yourschema.clustering_advisor_scores"
+    "yourschema.data_clustering_advisor_scores"
 )
 ```
 
@@ -69,8 +68,8 @@ result.scores_df.write.mode("overwrite").format("delta").saveAsTable(
 
 | Document | Description |
 |----------|-------------|
-| [How It Works](how-it-works.md) | Deep dive into the 7-phase pipeline |
+| [How It Works](how-it-works.md) | Detailed analysis of each phase in the pipeline execution lifecycle |
 | [Configuration](configuration.md) | Full parameter reference with defaults |
 | [Scoring](scoring.md) | Scoring formula, cardinality penalties, worked examples |
-| [Reports](reports.md) | Text, Markdown, and HTML report formats |
+| [Reports](reports.md) | HTML, Text and Markdown report formats |
 | [Data Type Reference](data-type-reference.md) | Supported types and limitations |

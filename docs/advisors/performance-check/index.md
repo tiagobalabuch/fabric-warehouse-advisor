@@ -1,19 +1,19 @@
 # Performance Check Advisor
 
-The Performance Check Advisor scans your Fabric Warehouse (or Lakehouse
-SQL Endpoint) for common performance pitfalls and produces actionable
-findings — no scoring, just clear guidance on what to fix and why.
+The Performance Check Advisor scans your Fabric Warehouse or SQL Analytics Endpoint for common performance pitfalls and produces actionable findings — no scoring, just clear guidance on what to fix and why.
 
 ## What it checks
 
 | Category | What it detects |
 |----------|----------------|
-| **Warehouse Type** | Whether you're on a DataWarehouse or Lakehouse SQL Endpoint — gates subsequent checks |
+| **Warehouse Type** | Whether you're on a DataWarehouse or SQL Analytics Endpoint — gates subsequent checks |
 | **Data Types** | `VARCHAR(MAX)`, oversized columns, `CHAR` vs `VARCHAR`, decimal over-precision, FLOAT for money, BIGINT for small ranges, dates stored as strings, nullable columns |
 | **Caching** | Result set caching status, cache hit ratio, cold-start detection |
 | **V-Order** | V-Order optimization state (DataWarehouse only — irreversible if disabled) |
 | **Statistics** | Auto-create/update stats, proactive refresh, stale statistics, row count drift, tables without statistics |
+| **Collation** | Detects columns whose collation differs from the database default — mismatched collation causes implicit conversions in joins and comparisons, preventing predicate push-down |
 | **Query Regression** | Detects query shapes whose recent performance is significantly worse than their historical baseline (warehouse-wide) |
+| **Custom SQL Pools** | Analyses Custom SQL Pools configuration — resource allocation imbalances, single-pool dominance, empty classifiers, pool pressure from Query Insights, unclassified traffic, and known Fabric app patterns not routed to a pool |
 
 ## Quick Start
 
@@ -27,6 +27,8 @@ config = PerformanceCheckConfig(
 advisor = PerformanceCheckAdvisor(spark, config)
 result = advisor.run()
 
+# To experience all features and interactive capabilities, save the report and open it in a web browser
+result.save("/lakehouse/default/Files/reports/report.html")
 # Rich HTML report
 displayHTML(result.html_report)
 ```
@@ -54,31 +56,32 @@ Each finding includes:
 
 ## Working with Results
 
-### Summary Counts
+!!! tip "Web Browser is recommended"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
+
+### Exploring Findings
 
 ```python
-# Summary counts by severity
-print(f"Critical: {result.critical_count}")
-print(f"High:     {result.high_count}")
-print(f"Medium:   {result.medium_count}")
-print(f"Low:      {result.low_count}")
-print(f"Info:     {result.info_count}")
+# Spark DataFrame with findings
+display(result.findings)
 ```
 
-### Iterating Findings
+### Saving Reports
 
 ```python
-# Iterate findings (sorted by severity)
-for f in result.findings:
-    print(f"[{f.level}] {f.object_name}: {f.message}")
-
-# Filter to actionable findings only (excludes INFO)
-for f in result.findings:
-    if f.is_actionable:
-        print(f"[{f.level}] {f.object_name}: {f.message}")
-        if f.recommendation:
-            print(f"  → {f.recommendation}")
+result.save("/lakehouse/default/Files/reports/performance_report.html")
+result.save("/lakehouse/default/Files/reports/performance_report.md", "md")
+result.save("/lakehouse/default/Files/reports/performance_report.txt", "txt")
 ```
+
+### Persisting data to Delta table
+
+```python
+result.findings.write.mode("overwrite").format("delta").saveAsTable(
+    "yourschema.performance_advisor"
+)
+```
+
 
 ### Filtering by Category or Level
 
@@ -92,14 +95,11 @@ from fabric_warehouse_advisor.advisors.performance_check.findings import CATEGOR
 
 dt_findings = result.summary.findings_by_category(CATEGORY_DATA_TYPES)
 display(dt_findings)
-```
 
-### Saving Reports
-
-```python
-result.save("/lakehouse/default/Files/reports/perf_report.html")
-result.save("/lakehouse/default/Files/reports/perf_report.md", "md")
-result.save("/lakehouse/default/Files/reports/perf_report.txt", "txt")
+# Other available categories:
+# CATEGORY_WAREHOUSE_TYPE, CATEGORY_CACHING, CATEGORY_STATISTICS,
+# CATEGORY_VORDER, CATEGORY_COLLATION, CATEGORY_QUERY_REGRESSION,
+# CATEGORY_CUSTOM_SQL_POOLS
 ```
 
 ## Documentation

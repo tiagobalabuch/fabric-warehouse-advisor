@@ -126,13 +126,19 @@ same score/label as any other column. This allows the advisor to:
 ## CTAS DDL Generation
 
 When `generate_ctas=True`, the advisor generates one `CREATE TABLE ...
-AS SELECT` statement per recommended column:
+AS SELECT` statement per recommended column. The target table is named
+`{table}_clust_{column_name}`:
 
 ```sql
-CREATE TABLE [schema].[table_clustered]
-WITH (CLUSTER BY ([column_name]))
-AS SELECT * FROM [schema].[table];
+CREATE TABLE [schema].[Orders_clust_OrderDate]
+WITH (CLUSTER BY ([OrderDate]))
+AS SELECT * FROM [schema].[Orders];
 ```
+
+If the resulting table name exceeds the **128-character** SQL Server
+identifier limit, it is automatically truncated (base table name is
+shortened first to preserve the column suffix) and a warning is added to
+the report.
 
 Only columns meeting **all** of these criteria get DDL:
 

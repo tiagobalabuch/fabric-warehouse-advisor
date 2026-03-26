@@ -1,11 +1,37 @@
 # Security Check Advisor
 
-The Security Check Advisor scans your Fabric Warehouse for common
-security misconfigurations and produces actionable findings — covering
-permissions, roles, Row-Level Security, Column-Level Security, and
-Dynamic Data Masking.
+The Security Check Advisor scans your Fabric Warehouse or SQL Analytics Endpoint for security misconfigurations and produces actionable
+findings — covering workspace roles, network isolation, OneLake security, SQL permissions, Row-Level Security, Column-Level Security,
+Dynamic Data Masking, and more.
 
 ## What it checks
+
+The advisor runs **15 phases** grouped into four layers:
+
+### Workspace & Platform
+
+| Category | What it detects |
+|----------|----------------|
+| **Workspace Roles** | Excessive admins, EntireTenant access, service-principal admin grants |
+| **Network Isolation** | Inbound / outbound public access policy (Allow vs Deny) |
+| **OneLake Settings** | Diagnostics logging, immutability policies |
+| **Sensitivity Labels** | Missing Microsoft Purview sensitivity label on the warehouse item |
+
+### Item Security
+
+| Category | What it detects |
+|----------|----------------|
+| **SQL Audit Settings** | Auditing disabled, short retention, missing audit action groups |
+| **Item Permissions** | EntireTenant item access, excessive ReadData sharing, write grants outside workspace roles |
+
+### OneLake Security
+
+| Category | What it detects |
+|----------|----------------|
+| **OneLake Data Access Roles** | DefaultReader covering all paths with custom roles, ReadWrite + RLS/CLS conflicts, wildcard paths, empty roles, excessive roles, multi-role CLS conflicts |
+| **OneLake Security Sync** | Stale `ols_` sync roles, missing sync for OneLake roles |
+
+### SQL Security
 
 | Category | What it detects |
 |----------|----------------|
@@ -14,6 +40,16 @@ Dynamic Data Masking.
 | **Row-Level Security** | Disabled RLS policies, unsupported BLOCK predicates, tables without RLS coverage |
 | **Column-Level Security** | Sensitive columns (by name pattern) lacking DENY SELECT protection |
 | **Dynamic Data Masking** | Excessive UNMASK grants, weak `default()` masking on short string columns |
+
+### Cross-Reference
+
+| Category | What it detects |
+|----------|----------------|
+| **Role Alignment** | Workspace Viewer with `db_owner`, high-privilege DB roles without matching workspace role |
+
+!!! note "Auth Mode Awareness"
+    For SQL Analytics Endpoints, the advisor detects the access mode (User Identity vs Delegated Identity) and adjusts which checks are active. In **User Identity mode**, SQL RLS, CLS, and custom roles are inactive — the advisor produces INFO findings instead of
+    running them, and highlights OneLake security roles as the primary access control mechanism.
 
 ## Quick Start
 
@@ -27,6 +63,8 @@ config = SecurityCheckConfig(
 advisor = SecurityCheckAdvisor(spark, config)
 result = advisor.run()
 
+# To experience all features and interactive capabilities, save the report and open it in a web browser
+result.save("/lakehouse/default/Files/reports/report.html")
 # Rich HTML report
 displayHTML(result.html_report)
 ```
@@ -54,30 +92,30 @@ Each finding includes:
 
 ## Working with Results
 
-### Summary Counts
+!!! tip "Web Browser is recommended"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
+    
+### Exploring Findings
 
 ```python
-# Summary counts by severity
-print(f"Critical: {result.critical_count}")
-print(f"High:     {result.high_count}")
-print(f"Medium:   {result.medium_count}")
-print(f"Low:      {result.low_count}")
-print(f"Info:     {result.info_count}")
+# Spark DataFrame with findings
+display(result.findings)
 ```
 
-### Iterating Findings
+### Saving Reports
 
 ```python
-# Iterate findings (sorted by severity)
-for f in result.findings:
-    print(f"[{f.level}] {f.object_name}: {f.message}")
+result.save("/lakehouse/default/Files/reports/security_report.html")
+result.save("/lakehouse/default/Files/reports/security_report.md", "md")
+result.save("/lakehouse/default/Files/reports/security_report.txt", "txt")
+```
 
-# Filter to actionable findings only (excludes INFO)
-for f in result.findings:
-    if f.is_actionable:
-        print(f"[{f.level}] {f.object_name}: {f.message}")
-        if f.recommendation:
-            print(f"  → {f.recommendation}")
+### Persisting data to Delta table
+
+```python
+result.findings.write.mode("overwrite").format("delta").saveAsTable(
+    "yourschema.security_advisor"
+)
 ```
 
 ### Filtering by Category or Level
@@ -92,14 +130,14 @@ from fabric_warehouse_advisor.advisors.security_check.findings import CATEGORY_P
 
 perm_findings = result.summary.findings_by_category(CATEGORY_PERMISSIONS)
 display(perm_findings)
-```
 
-### Saving Reports
-
-```python
-result.save("/lakehouse/default/Files/reports/security_report.html")
-result.save("/lakehouse/default/Files/reports/security_report.md", "md")
-result.save("/lakehouse/default/Files/reports/security_report.txt", "txt")
+# Available category constants:
+# CATEGORY_PERMISSIONS, CATEGORY_ROLES, CATEGORY_RLS, CATEGORY_CLS,
+# CATEGORY_DDM, CATEGORY_WORKSPACE_ROLES, CATEGORY_NETWORK,
+# CATEGORY_SQL_AUDIT, CATEGORY_ITEM_PERMISSIONS,
+# CATEGORY_SENSITIVITY_LABELS, CATEGORY_ROLE_ALIGNMENT,
+# CATEGORY_AUTH_MODE, CATEGORY_ONELAKE_DATA_ACCESS,
+# CATEGORY_ONELAKE_SETTINGS, CATEGORY_ONELAKE_SECURITY_SYNC
 ```
 
 ## Documentation

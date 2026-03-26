@@ -9,18 +9,12 @@ the same information — choose whichever fits your workflow.
 |--------|--------|----------|
 | **Text** | `result.text_report` | `print()` in a notebook cell; quick console overview |
 | **Markdown** | `result.markdown_report` | Saving as `.md`; rendering in GitHub, wikis, documentation |
-| **HTML** | `result.html_report` | `displayHTML()` in Fabric notebooks; rich visual display |
+| **HTML** | `result.html_report` | Saving as `.html`; Use a Web Browser for rich visual display or the `displayHTML()` in Fabric notebooks |
+
+!!! tip "Web Browser is recommended"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
 
 ## Viewing Reports
-
-### Text Report
-
-The text report is not automatically printed at the end of `advisor.run()`.
-To print it:
-
-```python
-print(result.text_report)
-```
 
 ### HTML Report (Recommended)
 
@@ -31,8 +25,10 @@ displayHTML(result.html_report)
 ```
 
 It includes:
+- Sidebar with tab-based navigation across tables, DDL, and best practices
 - Summary cards (tables analysed, recommendations, etc.)
 - Per-table sections with sortable score tables
+- Column header tooltips explaining each metric
 - Visual score bars
 - Color-coded recommendation badges
 - Collapsible DDL sections
@@ -42,6 +38,15 @@ It includes:
 
 ```python
 print(result.markdown_report)
+```
+
+### Text Report
+
+The text report is not automatically printed at the end of `advisor.run()`.
+To print it:
+
+```python
+print(result.text_report)
 ```
 
 ## Saving Reports
@@ -117,19 +122,26 @@ A reference section with key recommendations:
 - `char`/`varchar` first 32 character limit for statistics
 - `decimal` precision > 18 predicate pushdown limitation
 
-## Customising Report Output
+## Customizing Report Output
 
-Reports are generated from Python dataclasses (`TableRecommendation`,
-`ColumnScore`) that you can also access directly:
+The `DataClusteringResult` object exposes several attributes beyond the
+pre-formatted reports:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `recommendations` | `list[TableRecommendation]` | Per-table recommendations with nested `ColumnScore` objects. |
+| `all_scores` | `list[ColumnScore]` | Flat list of every scored column across all tables. |
+| `scores_df` | `DataFrame` | Spark DataFrame with the detailed scores — useful for custom queries, joins, or saving to a Lakehouse table. |
+| `captured_at` | `str` | ISO-8601 UTC timestamp of when the advisor run completed. |
+
+You can work with the Spark DataFrame for further analysis:
 
 ```python
-for rec in result.recommendations:
-    print(f"Table: {rec.schema_name}.{rec.table_name}")
-    print(f"  Rows: {rec.row_count:,}")
-    print(f"  Current CLUSTER BY: {rec.currently_clustered_columns}")
-    print(f"  Warnings: {rec.warnings}")
-    for col in rec.recommended_columns:
-        print(f"  - {col.column_name}: score={col.composite_score}, {col.recommendation}")
+# Show top candidates
+display(result.scores_df.orderBy("composite_score", ascending=False))
+
+# Save scores to a Lakehouse table
+result.scores_df.write.mode("overwrite").saveAsTable("data_clustering_scores")
 ```
 
 This allows you to build custom reports, dashboards, or integrations.

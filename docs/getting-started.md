@@ -7,48 +7,15 @@ and running your first analysis.
 
 | Requirement | Notes |
 |-------------|-------|
-| **Microsoft Fabric Workspace** | With at least one Fabric Warehouse or Lakehouse SQL Endpoint |
+| **Microsoft Fabric Workspace** | With at least one Fabric Warehouse or SQL Analytics Endpoint |
 | **Fabric Notebook** | The advisors run inside a Fabric Spark notebook |
-| **Warehouse / SQL Endpoint access** | The identity running the notebook (your Entra ID / service principal) must have at least **Read access** on the target Warehouse / SQL Endpoint |
-| **Same tenant** | The target Warehouse / SQL Endpoint must be in the same Fabric tenant |
-| **Python 3.9+** | Only needed if building from source (not required on Fabric) |
+| **Warehouse / SQL Analytics Endpoint access** | The identity running the notebook (your Entra ID / service principal) must have at least **Read access** on the target Warehouse / SQL Analytics Endpoint |
+| **Same tenant** | The target Warehouse / SQL Analytics Endpoint must be in the same Fabric tenant |
 
-!!! note "Prerequisite Note"
-    A Lakehouse is only required if you plan to upload the `.whl` file to the Lakehouse Files section.
+!!! info
+    A Lakehouse is only required if you plan to upload the `.whl` file to the Lakehouse Files section or save the report.
     The Microsoft Fabric Data Warehouse connector is pre-installed in the
     Fabric Spark runtime, and Query Insights is enabled by default on every Fabric Warehouse.
-
-## Getting the Wheel
-
-### Option A: Install directly from PyPI (Recommended)
-
-```python
-%pip install fabric-warehouse-advisor
-```
-
-For version information, dependencies, and release notes, see the [details](https://pypi.org/project/fabric-warehouse-advisor/).
-
-### Option B: Download Pre-Built
-
-Download the latest `.whl` file from the
-[GitHub Releases](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/latest)
-page — no build tools required.
-
-### Option C: Build from Source
-
-On your local machine (or in any Python 3.9+ environment):
-
-```bash
-pip install build
-python -m build
-```
-
-This produces two files in `dist/`:
-
-- `fabric_warehouse_advisor-1.0.3-py3-none-any.whl` — the installable wheel
-- `fabric_warehouse_advisor-1.0.3.tar.gz` — source distribution
-
-You only need the `.whl` file for Fabric.
 
 ## Installing in Fabric
 
@@ -59,29 +26,35 @@ Run PIP install
 ```python
 %pip install fabric-warehouse-advisor
 ```
+This is the quickest way to get up and running.
 
-### Option B: Per-Notebook Install
+For version information, dependencies, and release notes, see the [details](https://pypi.org/project/fabric-warehouse-advisor/).
+
+### Option B: Download Pre-Built
+
+!!! note "Download the `whl` file"
+    Download the latest `.whl` file from the [GitHub Releases](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/latest) page — no build tools required.
 
 1. Upload the `.whl` file to your Lakehouse **Files** area (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/load-data-lakehouse#upload-files) for detailed upload instructions).
 2. In the first cell of your notebook, run:
 
 ```python
-%pip install /lakehouse/default/Files/fabric_warehouse_advisor-1.0.3-py3-none-any.whl
+%pip install /lakehouse/default/Files/fabric_warehouse_advisor-X.Y.Z-py3-none-any.whl
 ```
-
-This is the quickest way to get up and running.
 
 ### Option C: Fabric Environment
 
-For a more permanent setup, you can attach the library to a Fabric Environment (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/create-and-use-environment)):
+!!! note "Download the `whl` file"
+    Download the latest `.whl` file from the [GitHub Releases](https://github.com/tiagobalabuch/fabric-warehouse-advisor/releases/latest) page — no build tools required.
 
 1. In your Fabric Workspace, create or open an **Environment** resource
 2. Under **Libraries**, upload the `.whl` file
 3. Publish the Environment
 4. Attach the Environment to your notebook (Settings → Environment)
 
-With this approach the library is pre-installed on every session that uses
-the Environment — no `%pip install` needed.
+For a more permanent setup, you can attach the library to a Fabric Environment (see the [official documentation](https://learn.microsoft.com/en-us/fabric/data-engineering/create-and-use-environment)):
+
+With this approach the library is pre-installed on every session that uses the Environment — no `%pip install` needed.
 
 ## Running an Advisor
 
@@ -106,8 +79,7 @@ for configuration options, scoring details, and report formats.
 
 ### Performance Check Advisor
 
-Detects performance anti-patterns across data types, caching, V-Order,
-and statistics:
+Detects performance anti-patterns across custom SQL Pools, data types, caching, V-Order, and statistics:
 
 ```python
 from fabric_warehouse_advisor import PerformanceCheckAdvisor, PerformanceCheckConfig
@@ -120,13 +92,11 @@ advisor = PerformanceCheckAdvisor(spark, config)
 result = advisor.run()
 ```
 
-See the full [Performance Check documentation](advisors/performance-check/index.md)
-for configuration options, check categories, and report formats.
+See the full [Performance Check documentation](advisors/performance-check/index.md) for configuration options, check categories, and report formats.
 
 ### Security Check Advisor
 
-Analyses your warehouse security posture across permissions, roles,
-RLS, CLS, and Dynamic Data Masking:
+Analyses your warehouse security posture across OneLake Security permissions, roles, RLS, CLS, and Dynamic Data Masking:
 
 ```python
 from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
@@ -162,6 +132,9 @@ print(result.markdown_report)
 
 ### Saving Reports
 
+!!! warning "Lakehouse is required"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
+
 ```python
 # Save as HTML (default)
 result.save("/lakehouse/default/Files/reports/report.html")
@@ -171,63 +144,6 @@ result.save("/lakehouse/default/Files/reports/report.md", "md")
 
 # Save as plain text
 result.save("/lakehouse/default/Files/reports/report.txt", "txt")
-```
-
-### Data Clustering — Exploring Scores
-
-The Data Clustering advisor also provides a Spark DataFrame:
-
-```python
-result.scores_df.show()
-
-# Persist to Delta for tracking over time
-result.scores_df.write.mode("overwrite").format("delta").saveAsTable(
-    "yourschema.clustering_advisor_scores"
-)
-```
-
-### Performance Check — Exploring Findings
-
-The Performance Check advisor provides structured findings:
-
-```python
-# Summary counts by severity
-print(f"Critical: {result.critical_count}")
-print(f"High:     {result.high_count}")
-print(f"Medium:   {result.medium_count}")
-print(f"Low:      {result.low_count}")
-print(f"Info:     {result.info_count}")
-
-# Iterate findings (sorted by severity)
-for f in result.findings:
-    print(f"[{f.level}] {f.object_name}: {f.message}")
-
-# Filter to actionable findings only (excludes INFO)
-for f in result.findings:
-    if f.is_actionable:
-        print(f"[{f.level}] {f.object_name}: {f.message}")
-        if f.recommendation:
-            print(f"  → {f.recommendation}")
-```
-
-### Security Check — Exploring Findings
-
-The Security Check advisor uses the same findings model:
-
-```python
-# Summary counts by severity
-print(f"Critical: {result.critical_count}")
-print(f"High:     {result.high_count}")
-print(f"Medium:   {result.medium_count}")
-print(f"Low:      {result.low_count}")
-print(f"Info:     {result.info_count}")
-
-# Filter by category
-from fabric_warehouse_advisor.advisors.security_check.findings import CATEGORY_PERMISSIONS
-
-perm_findings = result.summary.findings_by_category(CATEGORY_PERMISSIONS)
-for f in perm_findings:
-    print(f"[{f.level}] {f.object_name}: {f.message}")
 ```
 
 ## Next Steps

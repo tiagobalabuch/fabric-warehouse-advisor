@@ -1,0 +1,20 @@
+.md-banner {
+  background-color: #1a237e;
+  color: rgba(255, 255, 255, .75);
+}
+
+.md-banner a {
+  color: rgba(255, 255, 255, .75);
+}
+
+.md-banner a:hover {
+  color: #fff;
+}
+
+.md-banner code {
+  background: rgba(255, 255, 255, .25) !important;
+  color: #fff !important;
+  font-weight: 700;
+  padding: .2em .4em;
+  border-radius: 4px;
+}

@@ -1,7 +1,6 @@
 # Data Type Reference
 
-Not all SQL data types are supported for Data Clustering in Microsoft
-Fabric Warehouse. The advisor evaluates each candidate column's data
+Not all SQL data types are supported for Data Clustering in Microsoft Fabric Warehouse. The advisor evaluates each candidate column's data
 type and factors this into the score.
 
 ## Support Matrix
@@ -44,10 +43,8 @@ The data type assessment affects the score in two ways:
 
 ### 2. Recommendation Label
 
-Columns with unsupported data types are labelled "Not recommended
-(unsupported data type)" regardless of their composite score. If such a
-column is currently in a `CLUSTER BY`, it receives "Already clustered —
-NOT RECOMMENDED (unsupported data type)".
+Columns with unsupported data types are labelled "Not recommended (unsupported data type)" regardless of their composite score. If such a
+column is currently in a `CLUSTER BY`, it receives "Already clustered — NOT RECOMMENDED (unsupported data type)".
 
 ## Warnings Explained
 
@@ -57,10 +54,8 @@ NOT RECOMMENDED (unsupported data type)".
 Warning: precision=22 > 18 prevents predicate pushdown to storage.
 ```
 
-While these types *can* be clustered, the query engine cannot push
-predicates down to the V-Order storage layer when precision exceeds 18.
-This means queries filtering on such columns won't benefit from the
-columnar segment elimination that makes clustering effective.
+While these types *can* be clustered, the query engine cannot push predicates down to the V-Order storage layer when precision exceeds 18.
+This means queries filtering on such columns won't benefit from the columnar segment elimination that makes clustering effective.
 
 **Recommendation:** If possible, reduce precision to ≤ 18. If the full
 precision is required, clustering this column will have limited benefit.
@@ -77,14 +72,11 @@ columns for clustering statistics. If your filtering predicates depend
 on characters beyond position 32, segment elimination won't be
 effective.
 
-**Recommendation:** This is usually fine for columns like short codes
-(`CountryCode`, `Currency`), but less effective for long natural-language
-columns or identifiers that share a common prefix.
+**Recommendation:** This is usually fine for columns like short codes (`CountryCode`, `Currency`), but less effective for long natural-language columns or identifiers that share a common prefix.
 
 ## How the Advisor Detects Data Types
 
-Column data types are read from `sys.columns` joined with `sys.types`
-in Phase 1 (Metadata Collection). The relevant fields are:
+Column data types are read from `sys.columns` joined with `sys.types` in Phase 1 (Metadata Collection). The relevant fields are:
 
 - `data_type` — the type name (e.g., `int`, `varchar`)
 - `max_length` — storage length in bytes (−1 for MAX types)

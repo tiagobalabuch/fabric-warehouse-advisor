@@ -62,6 +62,7 @@ Each check category can be independently enabled or disabled:
 | `check_vorder` | `bool` | `True` | Enable V-Order state check. Auto-skipped for LakeWarehouse. |
 | `check_collation` | `bool` | `True` | Enable collation mismatch check. |
 | `check_query_regression` | `bool` | `True` | Enable query regression detection. |
+| `check_custom_sql_pools` | `bool` | `True` | Enable Custom SQL Pools configuration and pressure analysis. Requires REST API access and `workspace_id`. |
 
 Example — run only the statistics check:
 
@@ -74,6 +75,7 @@ config = PerformanceCheckConfig(
     check_statistics=True,
     check_collation=False,
     check_query_regression=False,
+    check_custom_sql_pools=False,
 )
 ```
 
@@ -136,11 +138,27 @@ config = PerformanceCheckConfig(
 |-----------|------|---------|-------------|
 | `vorder_warn_if_disabled` | `bool` | `True` | Flag if V-Order is disabled on the warehouse. |
 
+## Custom SQL Pools Settings
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `pool_pressure_lookback_hours` | `int` | `168` | How many hours back in `sql_pool_insights` to look for pool pressure events. Default is 168 (7 days). Use smaller values (e.g. 24) for hourly granularity. |
+| `pool_min_resource_pct_warning` | `int` | `5` | Flag pools with `maxResourcePercentage` at or below this value as potentially under-resourced. |
+| `pool_dominance_threshold_pct` | `int` | `90` | Flag pools holding at least this percentage of total resources when other pools also exist. |
+| `pool_pressure_critical_threshold` | `int` | `50` | Number of pressure events in the lookback window to escalate a finding to CRITICAL. |
+| `pool_pressure_high_threshold` | `int` | `10` | Number of pressure events in the lookback window to escalate a finding to HIGH (below this is MEDIUM). |
+
 ## Output
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `verbose` | `bool` | `False` | Print intermediate debug output for each phase. |
+
+## Throttle Protection
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `phase_delay` | `float` | `1.0` | Seconds to pause between phases to reduce HTTP 429 throttling from the Fabric control-plane API. Set to `0` to disable. |
 
 ## Validation
 

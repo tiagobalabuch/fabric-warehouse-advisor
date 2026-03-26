@@ -10,16 +10,10 @@ The advisor produces reports in three formats. All formats contain the same info
 | **Markdown** | `result.markdown_report` | Saving as `.md`; rendering in GitHub, wikis, documentation |
 | **HTML** | `result.html_report` | `displayHTML()` in Fabric notebooks; rich visual display |
 
+!!! tip "Web Browser is recommended"
+    The best way to visualize the report is to save it as `HTML`, which provides the full experience with rich features and interactivity.
+
 ## Viewing Reports
-
-### Text Report
-
-The text report is not automatically printed at the end of `advisor.run()`.
-To print it:
-
-```python
-print(result.text_report)
-```
 
 ### HTML Report (Recommended)
 
@@ -29,21 +23,40 @@ The HTML report renders natively in a Fabric notebook cell:
 displayHTML(result.html_report)
 ```
 
-Self-contained HTML page (no external dependencies) styled with the
-**Fabric blue** (`#0078d4`) design language. Features:
+Self-contained HTML page (no external dependencies).
+Features:
 
-- **Summary cards** — grid of Warehouse, Edition, Tables, Columns
-- **Severity cards** — colour-coded Critical / High / Medium / Low / Info / Total
-- **Category sections** — each with a severity badge bar
-- **Finding tables** — one row per finding with Level, Object, Finding,
-  Recommendation columns
-- **Collapsible groups** — blocks for checks with > 10 hits
-- **SQL code blocks** — dark-themed blocks
+- **Sidebar navigation** — tabbed sidebar with category tabs grouped
+  under section dividers:
+    - **Query Performance** — Caching, Statistics, Query Regression
+    - **Storage & Layout** — V-Order, Data Types, Collation
+    - **Workload Management** — Custom SQL Pools
+- **Workspace metadata** — workspace display name and capacity SKU shown in the sidebar when available.
+- **Info stat cards** — Edition, Tables, Columns
+- **Severity stat cards** — colour-coded clickable filters for
+  Critical / High / Medium / Low / Info / Total
+- **Sortable columns** — click Level, Object, or Rule headers to sort
+- **Finding tables** — one row per finding with Level, Object, Rule,
+  Finding, Recommendation columns
+- **Collapsible groups** — checks with > 10 hits are collapsed into
+  a single row with an expandable object pill grid
+- **Warn-box callouts** — for warehouse-wide or workspace-wide checks
+  (Query Regression, V-Order, Custom SQL Pools)
+- **SQL code blocks** — dark-themed blocks for fix scripts
 
 ### Markdown Report
 
 ```python
 print(result.markdown_report)
+```
+
+### Text Report
+
+The text report is not automatically printed at the end of `advisor.run()`.
+To print it:
+
+```python
+print(result.text_report)
 ```
 
 ## Saving Reports
@@ -74,25 +87,33 @@ Parent directories are created automatically.
 
 ## Programmatic Access
 
-All findings are also available as structured data:
+The `PerformanceCheckResult` object exposes findings and summary data.
+
+### Result Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `findings` | `list[Finding]` | All findings from every check. |
+| `summary` | `CheckSummary` | Aggregated summary object. |
+| `warehouse_edition` | `str` | Detected edition (`DataWarehouse` or `LakeWarehouse`). |
+| `text_report` | `str` | Pre-formatted text report. |
+| `markdown_report` | `str` | Markdown report. |
+| `html_report` | `str` | HTML report. |
+| `captured_at` | `str` | ISO-8601 timestamp (UTC) of the run. |
+| `has_critical` | `bool` | `True` if any CRITICAL-level finding exists. |
+| `critical_count` | `int` | Number of CRITICAL findings. |
+| `high_count` | `int` | Number of HIGH findings. |
+| `medium_count` | `int` | Number of MEDIUM findings. |
+| `low_count` | `int` | Number of LOW findings. |
+| `info_count` | `int` | Number of INFO findings. |
+
+You can work with the Spark DataFrame for further analysis:
 
 ```python
-# Iterate all findings
-for finding in result.findings:
-    print(f"[{finding.level}] {finding.category} - {finding.object_name}: {finding.message}")
+# Show top candidates
+display(result.findings)
 
-# Filter by severity
-critical = [f for f in result.findings if f.is_critical]
-
-# Group by category
-data_type_issues = [f for f in result.findings if f.category == "data_types"]
-
-# Summary counts
-print(f"Critical: {result.critical_count}")
-print(f"High:     {result.high_count}")
-print(f"Medium:   {result.medium_count}")
-print(f"Low:      {result.low_count}")
-print(f"Info:     {result.info_count}")
 ```
 
 See the [Finding dataclass](index.md#output-model) for the full field reference.
+

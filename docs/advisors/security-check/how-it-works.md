@@ -1,140 +1,263 @@
 # How It Works
 
-The Security Check advisor runs a **5-phase pipeline (Phases 1–5)** that
-analyses permission grants, role membership, Row-Level Security policies,
-Column-Level Security coverage, and Dynamic Data Masking configuration.
+The Security Check advisor runs a **15-phase pipeline** that analyses
+workspace roles, network policies, OneLake security, SQL permissions,
+Row-Level Security, Column-Level Security, Dynamic Data Masking, and
+cross-references REST API metadata with T-SQL catalog data.
 
 ## Architecture Overview
 
 ```text
-┌────────────────────────────────────────────────────────────────┐
-│                     Fabric Notebook                            │
-│                                                                │
-│  ├─ Phase 1: Schema Permissions  → sys.database_permissions    │
-│  ├─ Phase 2: Custom Roles        → sys.database_principals     │
-│  ├─ Phase 3: Row-Level Security  → sys.security_policies       │
-│  ├─ Phase 4: Column-Level Sec.   → sys.database_permissions    │
-│  └─ Phase 5: Dynamic Data Mask.  → sys.masked_columns          │
-│                                                                │
-│  All SQL runs via T-SQL passthrough (no data transferred to    │
-│  Spark — only metadata and permission information)             │
-└────────────────────────────────────────────────────────────────┘
+SecurityCheckAdvisor.run()
+  |
+  ├─ Phase 0a: Edition detection     → synapsesql()                 
+  ├─ Phase 0b: Auth mode detection   → REST (LakeWarehouse only)    
+  ├─ Phase 1: Workspace Roles        → GET /v1/workspaces/.../roles 
+  ├─ Phase 2: Network Isolation      → GET .../communicationPolicy  
+  ├─ Phase 3: OneLake Settings       → GET .../workspace settings   
+  ├─ Phase 4: SQL Audit Settings     → GET .../settings/sqlAudit    
+  ├─ Phase 5: Item Permissions       → Admin permissions API        
+  ├─ Phase 6: Sensitivity Labels     → Warehouse/endpoint metadata  
+  ├─ Phase 7: OneLake Data Access    → GET .../dataAccessRoles      
+  ├─ Phase 8: Schema Permissions     → sys.database_permissions     
+  ├─ Phase 9: Custom Roles           → sys.database_principals      
+  ├─ Phase 10: Row-Level Security    → sys.security_policies        
+  ├─ Phase 11: Column-Level Security → sys.database_permissions     
+  ├─ Phase 12: Dynamic Data Masking  → sys.masked_columns           
+  ├─ Phase 13: Security Sync Health  → sys.database_principals (ols)
+  └─ Phase 14: Role Alignment        → T-SQL + REST combined        
+
 ```
 
-## Phase 1: Schema Permissions (SEC-001)
+## Phase 0a: Edition Detection
+
+Determines whether the target is a **Warehouse** or a
+**SQL Analytics Endpoint** (`LakeWarehouse` edition). This gates
+subsequent checks — OneLake security phases (7, 13) only run for
+SQL Analytics Endpoint, and auth mode detection (Phase 0b) is skipped
+for standalone Warehouses.
+
+## Phase 0b: Auth Mode Detection
+
+For SQL Analytics Endpoint only. Calls an internal Fabric API to
+determine the access mode:
+
+- **User Identity** — OneLake security roles control table-level access.
+  SQL custom roles, RLS, and CLS are not enforced.
+- **Delegated Identity** — traditional SQL security model is active.
+  All Phase 7 (OneLake Data Access) findings are downgraded to INFO.
+
+The detected mode influences how Phases 7–11 behave (see
+*Auth Mode Gating* below).
+
+## Phase 1: Workspace Roles 
+
+Checks include:
+
+- **EntireTenant access** — a workspace role granted to the entire
+  tenant is flagged as CRITICAL.
+- **Excessive workspace admins** — more admin-role members than
+  `max_workspace_admins` (default: 3) is flagged as HIGH.
+- **Service principal as admin** — service principals in the Admin role
+  are flagged as MEDIUM.
+
+## Phase 2: Network Isolation 
+
+Checks include:
+
+- **Inbound public access allowed** — flagged as HIGH.
+- **Outbound public access allowed** — flagged as LOW (informational).
+
+## Phase 3: OneLake Settings
+
+Inspects workspace-level OneLake configuration. This phase is **not**
+gated by auth mode — it runs for both Warehouses and SQL Endpoints.
+
+Checks include:
+
+- **OneLake diagnostics disabled** — flagged as MEDIUM.
+- **No immutability policy** — flagged as LOW.
+
+## Phase 4: SQL Audit Settings 
+
+Checks include:
+
+- **SQL auditing disabled** — flagged as HIGH.
+- **Short audit retention** — retention below `min_audit_retention_days`
+  (default: 90) is flagged as MEDIUM.
+- **Missing audit action groups** — required action categories not
+  covered are flagged as HIGH.
+
+## Phase 5: Item Permissions 
+
+Calls the Admin permissions API to list principals with direct item
+permissions on the warehouse or SQL endpoint.
+
+Checks include:
+
+- **EntireTenant item access** — flagged as CRITICAL.
+- **Excessive ReadData sharing** — more principals than
+  `max_item_readdata_principals` (default: 10) is flagged as HIGH.
+- **Write permission outside workspace role** — a principal with
+  item-level write access but no corresponding workspace role is flagged
+  as MEDIUM.
+
+## Phase 6: Sensitivity Labels
+
+Inspects the warehouse or SQL endpoint metadata for a Microsoft Purview
+sensitivity label.
+
+- **No sensitivity label** — flagged as HIGH.
+- **Label applied** — reported as INFO for visibility.
+
+### Phase 7: OneLake Data Access Roles
+
+!!! note "Edition gate"
+    This phase only runs for **SQL Analytics Endpoint**. For
+    standalone Warehouses it is skipped.
+
+Checks include:
+
+- **ReadWrite role with RLS/CLS constraints** — a role granting
+  ReadWrite access while RLS or CLS is defined creates a bypass risk
+  (CRITICAL in User Identity mode, INFO in Delegated).
+- **DefaultReader full-access with custom roles** — the default reader
+  role covers all paths while custom roles also exist (HIGH / INFO).
+- **Wildcard path roles** — roles with `**` path patterns flagged as
+  MEDIUM.
+- **Empty OneLake roles** — roles with no members flagged as LOW.
+- **Excessive roles** — more roles than `max_onelake_roles` (default:
+  20) flagged as MEDIUM.
+- **Multi-role CLS conflict** — a principal in multiple roles where one
+  bypasses CLS restrictions (HIGH / INFO).
+
+## Phase 8: Schema Permissions
 
 Analyses `sys.database_permissions` joined with `sys.database_principals`
 to detect overly broad or risky permission grants.
 
-```sql
-SELECT
-    dp.class_desc,
-    dp.permission_name,
-    dp.state_desc,
-    SCHEMA_NAME(dp.major_id) AS schema_name,
-    pr.name AS grantee_name,
-    pr.type_desc AS grantee_type
-FROM sys.database_permissions AS dp
-INNER JOIN sys.database_principals AS pr
-    ON dp.grantee_principal_id = pr.principal_id
-WHERE dp.state_desc IN ('GRANT', 'GRANT_WITH_GRANT_OPTION')
-```
-
-Three sub-checks are applied to the result set:
+Three sub-checks:
 
 1. **Public role grants** — any permission granted to the `public` role
    is flagged as HIGH because every database user inherits it.
 2. **Direct user grants** — permissions granted to individual
-   `SQL_USER` / `EXTERNAL_USER` principals (rather than roles) are
-   flagged as MEDIUM because they are harder to audit at scale.
+   `SQL_USER` / `EXTERNAL_USER` principals are flagged as MEDIUM.
 3. **Schema-wide grants** — broad permissions (`CONTROL`, `ALTER`,
-   `TAKE OWNERSHIP`) on an entire schema are flagged as HIGH because
-   they apply to all current and future objects in that schema.
+   `TAKE OWNERSHIP`) on an entire schema are flagged as HIGH.
 
-## Phase 2: Custom Roles (SEC-002)
+!!! note "User Identity mode"
+    In User Identity mode, table-level permission findings are
+    downgraded to INFO because SQL permissions are not enforced.
+
+## Phase 9: Custom Roles
 
 Queries `sys.database_principals` and `sys.database_role_members` to
 assess role hygiene.
 
 Three sub-checks:
 
-1. **Excessive `db_owner` membership** — `db_owner` bypasses all
-   permission checks. If the member count exceeds
-   `max_db_owner_members` (default: 2), a HIGH finding is raised.
-2. **Empty custom roles** — roles with zero members add clutter and may
-   indicate incomplete provisioning (LOW).
-3. **Users without any custom role** — database users who are not
-   assigned to any custom role may be relying on direct grants or the
-   `public` role, making access harder to audit (MEDIUM).
+1. **Excessive `db_owner` membership** — more members than
+   `max_db_owner_members` (default: 2) raises a HIGH finding.
+2. **Empty custom roles** — roles with zero members (LOW).
+3. **Users without any custom role** — database users relying on direct
+   grants or the `public` role (MEDIUM).
 
-## Phase 3: Row-Level Security (SEC-003)
+!!! note "User Identity mode"
+    In User Identity mode, this check is replaced with a single INFO
+    finding stating that SQL custom roles are inactive.
+
+## Phase 10: Row-Level Security
 
 Analyses `sys.security_policies` joined with `sys.security_predicates`
 and `sys.objects` to assess RLS coverage.
 
 Three sub-checks:
 
-1. **Disabled policies** — an RLS policy that exists but has
-   `is_enabled = 0` provides no protection (HIGH).
-2. **BLOCK predicates** — Microsoft Fabric Warehouse supports only
-   FILTER predicates. BLOCK predicates may be silently ignored (MEDIUM).
-3. **Tables without RLS** — user tables with no active FILTER predicate
-   are flagged as INFO so you can evaluate whether they need protection.
+1. **Disabled policies** — `is_enabled = 0` (HIGH).
+2. **BLOCK predicates** — Fabric Warehouse supports only FILTER
+   predicates; BLOCK is flagged as MEDIUM.
+3. **Tables without RLS** — user tables lacking an active FILTER
+   predicate (INFO).
 
-!!! note "Scope filtering"
-    When `table_names` is configured, only the specified tables are
-    evaluated for RLS coverage.
+!!! note "User Identity mode"
+    In User Identity mode, this check is replaced with a single INFO
+    finding stating that SQL RLS is inactive.
 
-## Phase 4: Column-Level Security (SEC-004)
+## Phase 11: Column-Level Security
 
-Checks `sys.database_permissions` (filtered to column-scoped grants)
-against a configurable list of sensitive column name patterns.
-
-Two sub-checks:
-
-1. **Sensitive columns without DENY SELECT** — columns whose names match
-   `sensitive_column_patterns` (e.g. `%ssn%`, `%salary%`) but have no
-   column-level DENY SELECT grant are flagged as HIGH.
-2. **Protected columns** — columns that already have DENY SELECT are
-   reported as INFO for visibility.
-
-The default sensitive patterns cover common PII and financial columns:
-
-```python
-["%ssn%", "%social_security%", "%salary%", "%compensation%",
- "%credit_card%", "%card_number%", "%password%", "%secret%",
- "%date_of_birth%", "%dob%"]
-```
-
-## Phase 5: Dynamic Data Masking (SEC-005)
-
-Analyses `sys.masked_columns` and `sys.database_permissions` (for
-UNMASK grants) to assess DDM coverage and hygiene.
+Checks `sys.database_permissions` against configurable sensitive column
+name patterns.
 
 Two sub-checks:
 
-1. **Excessive UNMASK grants** — if more principals have UNMASK
-   permission than `max_unmask_principals` (default: 3), a HIGH finding
-   is raised.
-2. **Weak default masking** — `default()` masking on short string
-   columns (`max_length ≤ 4`) may be trivially reversible and is
-   flagged as MEDIUM.
+1. **Sensitive columns without DENY SELECT** — columns matching
+   `sensitive_column_patterns` without protection (HIGH).
+2. **Protected columns** — columns with DENY SELECT (INFO).
 
-## Data Flow
+!!! note "User Identity mode"
+    In User Identity mode, this check is replaced with a single INFO
+    finding stating that SQL CLS is inactive.
 
-```text
-Phase 1 (permissions) ──────────┐
-Phase 2 (roles) ────────────────┤
-Phase 3 (RLS) ─────────────────┼──► Report Generation
-Phase 4 (CLS) ─────────────────┤        │
-Phase 5 (DDM) ─────────────────┘        ▼
-                               SecurityCheckResult
-                               ├── findings[]
-                               ├── summary (CheckSummary)
-                               ├── text_report
-                               ├── markdown_report
-                               └── html_report
-```
+## Phase 12: Dynamic Data Masking
+
+Analyses `sys.masked_columns` and UNMASK grants.
+
+Two sub-checks:
+
+1. **Excessive UNMASK grants** — more principals than
+   `max_unmask_principals` (default: 3) (HIGH).
+2. **Weak default masking** — `default()` on short string columns
+   (`max_length ≤ 4`) (MEDIUM).
+
+!!! note
+    DDM is a SQL-engine feature enforced at query time regardless of
+    auth mode, so this phase runs in both modes.
+
+## Phase 13: Security Sync Health
+
+Queries `sys.database_principals` for `ols_`-prefixed roles that Fabric
+creates to synchronise OneLake data access roles into the SQL engine.
+
+!!! note "Edition gate"
+    This phase only runs for **SQL Analytics Endpoint**.
+
+Checks include:
+
+- **Security sync missing** — no `ols_` roles exist when OneLake roles
+  are defined (HIGH).
+- **Stale sync role** — an `ols_` role exists in SQL but no matching
+  OneLake role was found (MEDIUM).
+- **Missing sync role** — an OneLake role has no corresponding `ols_`
+  role in SQL (MEDIUM).
+
+## Phase 14: Role Alignment 
+
+Combines workspace role assignments (from the REST API, fetched in
+Phase 1) with SQL database role membership (T-SQL) to detect misalignments.
+
+Checks include:
+
+- **Viewer with `db_owner`** — a workspace Viewer who is a member of
+  `db_owner` in the database (HIGH).
+- **Viewer with high-privilege role** — a Viewer with a custom role
+  granting broad permissions (MEDIUM).
+- **No workspace role but high DB privileges** — a database principal
+  with elevated SQL roles who has no workspace role assignment (MEDIUM).
+
+## Auth Mode Gating
+
+For SQL Analytics Endpoint, the detected auth mode changes which
+checks are active:
+
+| Phase | Check | User Identity | Delegated Identity |
+|-------|-------|---------------|-------------------|
+| 7 | OneLake Data Access Roles | Full severity | All findings → INFO |
+| 9 | Custom Roles | INFO (inactive) | Full check |
+| 10 | Row-Level Security | INFO (inactive) | Full check |
+| 11 | Column-Level Security | INFO (inactive) | Full check |
+| 8 | Schema Permissions | Table-level → INFO | Full severity |
+
+Phases not listed in the table above run identically in both modes.
 
 ## Throttle Protection
 

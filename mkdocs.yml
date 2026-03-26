@@ -6,6 +6,7 @@ repo_name: tiagobalabuch/fabric-warehouse-advisor
 
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -25,44 +26,72 @@ theme:
     - navigation.instant
     - navigation.tracking
     - navigation.sections
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.path
     - navigation.top
     - search.highlight
     - search.suggest
     - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+  - glightbox
+
+validation:
+  nav:
+    not_found: info
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.tabbed:
       alternate_style: true
   - tables
   - toc:
       permalink: true
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tiagobalabuch/fabric-warehouse-advisor
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/fabric-warehouse-advisor/
+
+extra_css:
+  - assets/extra.css
+
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Advisors:
-    - Overview: advisors/index.md
+    - advisors/index.md
     - Data Clustering:
-      - Overview: advisors/data-clustering/index.md
+      - advisors/data-clustering/index.md
       - How It Works: advisors/data-clustering/how-it-works.md
       - Configuration: advisors/data-clustering/configuration.md
       - Scoring: advisors/data-clustering/scoring.md
       - Reports: advisors/data-clustering/reports.md
       - Data Type Reference: advisors/data-clustering/data-type-reference.md
     - Performance Check:
-      - Overview: advisors/performance-check/index.md
+      - advisors/performance-check/index.md
       - How It Works: advisors/performance-check/how-it-works.md
       - Configuration: advisors/performance-check/configuration.md
       - Check Categories: advisors/performance-check/checks.md
       - Reports: advisors/performance-check/reports.md
     - Security Check:
-      - Overview: advisors/security-check/index.md
+      - advisors/security-check/index.md
       - How It Works: advisors/security-check/how-it-works.md
       - Configuration: advisors/security-check/configuration.md
       - Check Categories: advisors/security-check/checks.md

@@ -1,6 +1,6 @@
 # Check Categories
 
-The Performance Check advisor runs up to **7 check categories**, each
+The Performance Check advisor runs up to **8 check categories**, each
 targeting a different area of warehouse health.  Every finding includes
 a severity level, a human-readable message, and — where applicable — a
 ready-to-run T-SQL fix.
@@ -15,14 +15,7 @@ ready-to-run T-SQL fix.
 | Config toggle | Always runs |
 | Applies to | DataWarehouse, LakeWarehouse |
 
-Detects the Fabric item edition via:
-
-```sql
-SELECT CONVERT(varchar(100),
-       DATABASEPROPERTYEX(DB_NAME(), 'Edition')) AS edition
-```
-
-The result gates subsequent checks — for example, V-Order is only
+Detects the Fabric item edition. The result gates subsequent checks — for example, V-Order is only
 meaningful on **DataWarehouse**.
 
 | Check | Level | When |
@@ -118,11 +111,7 @@ using `sys.databases` and `queryinsights.exec_requests_history`.
 
 **Step 1 — Result Cache Status**
 
-```sql
-SELECT name, is_result_set_caching_on
-FROM sys.databases
-WHERE database_id = DB_ID()
-```
+Check if Result Cache is enabled.
 
 **Step 2 — Cache Hit Ratio** (over `cold_start_lookback_hours`)
 
@@ -139,15 +128,6 @@ Aggregates `queryinsights.exec_requests_history` by `result_cache_hit`:
 Queries with `data_scanned_remote_storage_mb > 0` fetched data from
 OneLake rather than local SSD cache.  This is normal for first-run
 queries but should decrease on subsequent runs.
-
-### SQL Fix
-
-If result set caching is disabled:
-
-```sql
-ALTER DATABASE [MyWarehouse]
-SET RESULT_SET_CACHING ON;
-```
 
 ---
 
@@ -218,39 +198,10 @@ Analyses the health of query optimizer statistics using `sys.stats`, `STATS_DATE
 
 ### How Statistics Analysis Works
 
-**Database-level settings** are checked first:
-
-```sql
-SELECT name, is_auto_create_stats_on, is_auto_update_stats_on
-FROM sys.databases WHERE database_id = DB_ID()
-```
-
-**Proactive refresh** (Fabric-specific feature):
-
-```sql
-SELECT name, is_proactive_stats_collection_on
-FROM sys.databases WHERE database_id = DB_ID()
-```
-
-**Per-table staleness** — iterates all statistics from `sys.stats` and
-checks `STATS_DATE()` against the configured threshold.
-
-**Row count drift** — compares the `COUNT_BIG(*)` result, which Fabric resolves from columnstore metadata, to the estimate from `DBCC SHOW_STATISTICS ... WITH STAT_HEADER`. A large drift means the optimizer is working with outdated cardinality estimates.
-
-### SQL Fixes
-
-Update stale statistics:
-
-```sql
-UPDATE STATISTICS [schema].[table] (stats_name) WITH FULLSCAN;
-```
-
-Enable proactive refresh:
-
-```sql
-ALTER DATABASE CURRENT
-SET PROACTIVE_STATS_COLLECTION = ON;
-```
+- **Database-level settings** are checked first
+- **Proactive refresh** (Fabric-specific feature)
+- **Per-table staleness** — iterates all statistics from `sys.stats` and checks `STATS_DATE()` against the configured threshold.
+- **Row count drift** — compares the `COUNT_BIG(*)` result, which Fabric resolves from columnstore metadata, to the estimate from `DBCC SHOW_STATISTICS ... WITH STAT_HEADER`. A large drift means the optimizer is working with outdated cardinality estimates.
 
 ---
 
@@ -306,12 +257,91 @@ exceeding the warning threshold are flagged.
 
 ---
 
-## Severity Reference
+## 7. Collation Consistency
 
-| Level | Icon | Meaning | Action |
-|-------|------|---------|--------|
-| CRITICAL | ❌ | Significant performance impact or irreversible misconfiguration | Fix immediately |
-| HIGH | 🔴 | Important issue likely to affect performance at scale | Plan a fix soon |
-| MEDIUM | 🟡 | Sub-optimal setting that may degrade performance under load | Fix during next maintenance window |
-| LOW | 🔵 | Minor improvement opportunity with marginal benefit | Address when convenient |
-| INFO | ✅ | Healthy configuration or informational note | No action required |
+| Property | Value |
+|----------|-------|
+| Category constant | `CATEGORY_COLLATION` |
+| Config toggle | `check_collation` |
+| Applies to | DataWarehouse, LakeWarehouse |
+
+Checks column-level collation against the database default collation.
+Mismatched collation can cause implicit conversions in joins and
+comparisons, preventing predicate push-down, degrading performance,
+and leading to unexpected sort behaviour.
+
+### Full Check List
+
+| Check Name | Level | What It Detects |
+|-----------|-------|------------------|
+| `collation_consistent` | INFO | All column collations match the database default |
+| `collation_mismatch` | HIGH | A column’s collation differs from the database default |
+| `collation_check_skipped` | INFO | Database collation could not be determined, or no tables match scope |
+| `collation_check_failed` | INFO | Query error prevented the check from running |
+
+### How It Works
+
+Each column’s collation is compared against the database default.
+Columns are filtered by the configured `schema_names` / `table_names`
+scope before analysis.
+
+---
+
+## 8. Custom SQL Pools
+
+| Property | Value |
+|----------|-------|
+| Category constant | `CATEGORY_CUSTOM_SQL_POOLS` |
+| Config toggle | `check_custom_sql_pools` |
+| Applies to | DataWarehouse, LakeWarehouse |
+
+Analyses the Custom SQL Pools configuration for the workspace via the
+Fabric REST API and monitors pool pressure via
+`queryinsights.sql_pool_insights`.
+
+!!! note "Workspace-wide"
+    This check runs workspace-wide and is **not** filtered by `schema_names` / `table_names` selections.
+
+### Configuration Checks
+
+| Check Name | Level | What It Detects |
+|-----------|-------|------------------|
+| `custom_pools_not_enabled` | INFO | Custom SQL Pools are not enabled; workspace uses default workload management |
+| `custom_pools_enabled_no_pools` | INFO | Feature enabled but no pools configured |
+| `resource_sum_mismatch` | HIGH | Pool resource percentages do not sum to 100% |
+| `resource_allocation_imbalance` | MEDIUM | A pool is allocated ≤ `pool_min_resource_pct_warning` % of resources |
+| `single_pool_dominance` | LOW | One pool holds ≥ `pool_dominance_threshold_pct` % while other pools exist |
+| `empty_classifier` | HIGH | A pool has no classifier values (queries cannot be routed to it) |
+| `read_optimization_missing` | LOW | A reporting-style pool is not optimized for reads |
+| `pool_count_at_limit` | LOW | Pool count has reached the 8-pool maximum |
+| `pool_count_near_limit` | LOW | Pool count is one below the 8-pool maximum |
+
+### Runtime Checks
+
+| Check Name | Level | What It Detects |
+|-----------|-------|------------------|
+| `pool_under_pressure` | MEDIUM / HIGH / CRITICAL | Pool experienced resource pressure events in the lookback window (escalated by event count) |
+| `unclassified_traffic` | LOW / MEDIUM | Application names in recent query history do not match any pool classifier |
+| `known_app_unclassified` | MEDIUM | Well-known Fabric application patterns (Pipelines, Power BI, SQL Query Editor) not matched by any classifier |
+| `custom_pools_skipped` | INFO | Check skipped — REST client or workspace ID not available |
+| `custom_pools_api_error` | INFO | REST API call failed |
+| `pool_pressure_check_failed` | INFO | Could not query pool pressure data |
+
+### Known Fabric Application Patterns
+
+| Application | Pattern |
+|------------|----------|
+| Fabric Pipelines | `Data Integration-<guid>` |
+| Power BI | `PowerBIPremium-DirectQuery`, `Mashup Engine (PowerBIPremium-Import)` |
+| SQL Query Editor | `DMS_user` |
+
+### Configuration
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `check_custom_sql_pools` | `True` | Enable/disable the check |
+| `pool_pressure_lookback_hours` | `168` | Hours back to scan `sql_pool_insights` |
+| `pool_min_resource_pct_warning` | `5` | Flag pools at or below this allocation % |
+| `pool_dominance_threshold_pct` | `90` | Flag pools holding ≥ this % of resources |
+| `pool_pressure_critical_threshold` | `50` | Pressure events to trigger CRITICAL |
+| `pool_pressure_high_threshold` | `10` | Pressure events to trigger HIGH |

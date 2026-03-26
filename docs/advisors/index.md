@@ -15,8 +15,6 @@ its own reports.
 | **Result class** | `DataClusteringResult` | `PerformanceCheckResult` | `SecurityCheckResult` |
 | **Reports** | Text, Markdown, HTML | Text, Markdown, HTML | Text, Markdown, HTML |
 | **DDL generation** | Yes (CTAS statements) | Yes (per-finding SQL fixes) | Yes (per-finding SQL fixes) |
-| **Phases** | 7 (metadata → scoring) | 7 (edition → statistics) | 5 (permissions → DDM) |
-
 
 ## Data Clustering Advisor
 
@@ -27,7 +25,7 @@ from fabric_warehouse_advisor import DataClusteringAdvisor, DataClusteringConfig
 
 config = DataClusteringConfig(warehouse_name="MyWarehouse")
 result = DataClusteringAdvisor(spark, config).run()
-displayHTML(result.html_report)
+result.save("/lakehouse/default/Files/reports/report.html")
 ```
 
 [Full documentation →](data-clustering/index.md)
@@ -36,29 +34,29 @@ displayHTML(result.html_report)
 
 Scans for common performance pitfalls across multiple categories, including warehouse edition detection, data‑type anti‑patterns, caching configuration, collation settings, query regression, statistics health, and V‑Order optimization state.
 
-!!! info "Checking Warehouse edition"
-    Not all checks apply to every warehouse edition.
+!!! info "Different checks"
+    Validation coverage is edition-specific. Warehouse and SQL Endpoint editions run different sets of checks, which are not equivalent.
 
 ```python
 from fabric_warehouse_advisor import PerformanceCheckAdvisor, PerformanceCheckConfig
 
 config = PerformanceCheckConfig(warehouse_name="MyWarehouse")
 result = PerformanceCheckAdvisor(spark, config).run()
-displayHTML(result.html_report)
+result.save("/lakehouse/default/Files/reports/report.html")
 ```
 
 [Full documentation →](performance-check/index.md)
 
 ## Security Check Advisor
 
-Scans your warehouse for security misconfigurations across permissions, roles, Row‑Level Security, Column‑Level Security, and Dynamic Data Masking.
+Scans your warehouse for security misconfigurations across OneLake Security, permissions, roles, Row‑Level Security, Column‑Level Security, and Dynamic Data Masking.
 
 ```python
 from fabric_warehouse_advisor import SecurityCheckAdvisor, SecurityCheckConfig
 
 config = SecurityCheckConfig(warehouse_name="MyWarehouse")
 result = SecurityCheckAdvisor(spark, config).run()
-displayHTML(result.html_report)
+result.save("/lakehouse/default/Files/reports/report.html")
 ```
 
 [Full documentation →](security-check/index.md)
@@ -79,7 +77,7 @@ warehouse = "MyWarehouse"
 
 # Performance check first — fix anti-patterns before optimizing clustering
 pc_result = PerformanceCheckAdvisor(spark, PerformanceCheckConfig(
-    warehouse_name=warehouse,
+    warehouse_name=warehouse
 )).run()
 
 # Security check — identify access-control gaps
@@ -91,10 +89,10 @@ dc_result = DataClusteringAdvisor(spark, DataClusteringConfig(
     warehouse_name=warehouse,
 )).run()
 
-# Display all reports
-displayHTML(pc_result.html_report)
-displayHTML(sc_result.html_report)
-displayHTML(dc_result.html_report)
+# Saving all reports
+dc_result.save("/lakehouse/default/Files/reports/DataClusteringReport.html")
+sc_result.save("/lakehouse/default/Files/reports/SecurityCheckReport.html")
+pc_result.save("/lakehouse/default/Files/reports/PerformanceCheckReport.html")
 ```
 
 !!! tip "Recommended order"

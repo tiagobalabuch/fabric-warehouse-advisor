@@ -81,6 +81,12 @@ See [Scoring](scoring.md) for the detailed formulas.
 | `min_recommendation_score` | `int` | `40` | Minimum composite score to surface a recommendation. Columns below this are labelled "Not recommended". |
 | `generate_ctas` | `bool` | `False` | When `True`, generate one `CREATE TABLE ... AS SELECT` DDL statement per recommended column. Set this to include ready-to-run DDL in the report. |
 
+## Parallelism
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_parallel_tables` | `int` | `4` | Maximum number of tables to estimate cardinality for in parallel during Phase 6. Each table gets a single batched `APPROX_COUNT_DISTINCT` query covering all its candidate columns. Higher values reduce wall-clock time but increase concurrent SQL sessions on the warehouse. Set to `1` to disable parallelism. |
+
 ## Scope Filtering
 
 | Parameter | Type | Default | Description |
@@ -119,10 +125,15 @@ query pattern matching, cardinality estimation, and scoring.
 |-----------|------|---------|-------------|
 | `verbose` | `bool` | `False` | When `True`, prints structured debug output for each phase including intermediate DataFrames, row counts, and predicate breakdowns. Useful for understanding what the advisor is doing. |
 
+## Throttle Protection
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `phase_delay` | `float` | `1.0` | Seconds to pause between phases to reduce HTTP 429 throttling from the Fabric control-plane API. Set to `0` to disable the delay. |
+
 ## Validation
 
-The config is validated automatically when `advisor.run()` is called. The
-following checks are performed:
+The config is validated automatically when `advisor.run()` is called. The following checks are performed:
 
 - `warehouse_name` must be set to a non-empty value (not the placeholder
   `"<your_warehouse_name>"`)
